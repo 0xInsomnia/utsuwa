@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "utsuwa-neliel",
+	"name": "utsuwa",
 	// adapter-cloudflare writes SvelteKit's worker here. Deploys use
 	// cloudflare-worker.js instead (see the cf:deploy scripts), which does the
 	// host routing and then hands off to this one.
