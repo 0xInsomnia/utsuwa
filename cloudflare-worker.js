@@ -7,6 +7,11 @@ import { routeByHost } from './src/lib/config/host-routing.ts';
 
 export default {
 	async fetch(request, env, ctx) {
+		const url = new URL(request.url);
+		if (url.pathname === '/' && (request.method === 'GET' || request.method === 'HEAD')) {
+			url.pathname = '/app';
+			return Response.redirect(url.toString(), 302);
+		}
 		const limited = await apiRateLimited(request, env.API_RATE_LIMIT);
 		if (limited) return limited;
 		const rewrite = routeByHost(new URL(request.url));
