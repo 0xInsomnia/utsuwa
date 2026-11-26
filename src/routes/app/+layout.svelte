@@ -36,6 +36,9 @@
 
 <svelte:head>
 	<meta name="robots" content="noindex, nofollow" />
+	<!-- Status bar of the installed app follows the canvas color (DESIGN.md) -->
+	<meta name="theme-color" content="#FCFCFC" media="(prefers-color-scheme: light)" />
+	<meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
 	<!-- Shared app links still get a proper card -->
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="Utsuwa" />
