@@ -1,5 +1,7 @@
+#[cfg(desktop)]
 use tauri::Manager;
 
+#[cfg(desktop)]
 #[tauri::command]
 fn show_overlay(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(window) = app.get_webview_window("overlay") {
@@ -9,6 +11,7 @@ fn show_overlay(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(desktop)]
 #[tauri::command]
 fn toggle_overlay(app: tauri::AppHandle) -> Result<bool, String> {
     if let Some(window) = app.get_webview_window("overlay") {
@@ -29,7 +32,6 @@ fn toggle_overlay(app: tauri::AppHandle) -> Result<bool, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init());
@@ -37,6 +39,7 @@ pub fn run() {
     // Updates ship as signed installers, so the updater is desktop-only.
     #[cfg(desktop)]
     let builder = builder
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init());
 
@@ -48,11 +51,10 @@ pub fn run() {
         _ => tauri::webview::PermissionResponse::Default,
     });
 
+    #[cfg(desktop)]
+    let builder = builder.invoke_handler(tauri::generate_handler![show_overlay, toggle_overlay]);
+
     builder
-        .invoke_handler(tauri::generate_handler![
-            show_overlay,
-            toggle_overlay
-        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

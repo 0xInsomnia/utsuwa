@@ -1,0 +1,25 @@
+{
+  "productName": "Neliel",
+  "identifier": "com.zeroxinsomnia.neliel",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Neliel",
+        "url": "/app"
+      }
+    ],
+    "security": {
+      "capabilities": [
+        "android-main"
+      ]
+    }
+  },
+  "bundle": {
+    "targets": "all",
+    "createUpdaterArtifacts": false,
+    "android": {
+      "minSdkVersion": 26
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "identifier": "android-main",
+  "description": "Native Android main window. Direct HTTPS requests to user-selected providers, no desktop hotkeys or updater.",
+  "platforms": [
+    "android"
+  ],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "http:default",
+      "allow": [
+        {
+          "url": "https://*:*"
+        }
+      ]
+    },
+    "opener:default"
+  ]
+}
