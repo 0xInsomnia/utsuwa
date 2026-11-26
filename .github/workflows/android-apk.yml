@@ -4,7 +4,7 @@ on:
     branches: [feature/android-apk]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: android-apk
   cancel-in-progress: true
@@ -47,6 +47,24 @@ jobs:
           export PATH="$GITHUB_WORKSPACE/node_modules/.bin:$PATH"
           cd src-tauri
           pnpm exec tauri --version
+      - name: Set monotonically increasing Android build version
+        env:
+          HAS_SIGNING_KEY: ${{ secrets.NELIEL_SIGNING_BUNDLE != '' }}
+        shell: bash
+        run: |
+          code=$((1000000 + GITHUB_RUN_NUMBER))
+          export NELIEL_BUILD_CODE="$code"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('src-tauri/tauri.android.conf.json')
+          config = json.loads(p.read_text())
+          config['bundle']['android']['versionCode'] = int(os.environ['NELIEL_BUILD_CODE'])
+          p.write_text(json.dumps(config, indent=2) + '\n')
+          PY
+          echo "VITE_NELIEL_ANDROID_BUILD=$code" >> "$GITHUB_ENV"
+          echo "VITE_NELIEL_ANDROID_SIGNED=$HAS_SIGNING_KEY" >> "$GITHUB_ENV"
+          echo "NELIEL_BUILD_CODE=$code" >> "$GITHUB_ENV"
       - name: Initialize Android project
         run: pnpm exec tauri android init --ci --skip-targets-install
       - name: Build ARM64 debug APK
@@ -60,6 +78,52 @@ jobs:
           signer=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -1)
           test -n "$signer"
           for apk in apk-output/*.apk; do "$signer" verify --verbose "$apk"; done
+      - name: Sign permanent Android update
+        if: env.VITE_NELIEL_ANDROID_SIGNED == 'true'
+        env:
+          NELIEL_SIGNING_BUNDLE: ${{ secrets.NELIEL_SIGNING_BUNDLE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          keydir=$(mktemp -d)
+          trap 'rm -rf "$keydir"' EXIT
+          export NELIEL_KEY_DIR="$keydir"
+          python - <<'PY'
+          import base64, json, os
+          from pathlib import Path
+          bundle = json.loads(os.environ['NELIEL_SIGNING_BUNDLE'])
+          p = Path(os.environ['NELIEL_KEY_DIR'])
+          (p / 'neliel.p12').write_bytes(base64.b64decode(bundle['keystore'], validate=True))
+          (p / 'password').write_text(bundle['password'])
+          PY
+          unset NELIEL_SIGNING_BUNDLE
+          export NELIEL_KEY_PASS="$(cat "$keydir/password")"
+          echo "::add-mask::$NELIEL_KEY_PASS"
+          signer="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          apk=$(find apk-output -name '*.apk' -print -quit)
+          test -n "$apk"
+          mkdir -p signed-output
+          "$signer" sign --ks "$keydir/neliel.p12" --ks-type PKCS12 --ks-key-alias neliel --ks-pass env:NELIEL_KEY_PASS --key-pass env:NELIEL_KEY_PASS --out signed-output/Neliel-Android.apk "$apk"
+          "$signer" verify --verbose --print-certs signed-output/Neliel-Android.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging signed-output/Neliel-Android.apk | grep -F "versionCode='$NELIEL_BUILD_CODE'"
+          sha256sum signed-output/Neliel-Android.apk | awk '{print $1 "  Neliel-Android.apk"}' > signed-output/SHA256SUMS.txt
+          rm -f apk-output/*.apk
+          cp signed-output/Neliel-Android.apk apk-output/
+      - name: Publish signed Android APK as direct download
+        if: env.VITE_NELIEL_ANDROID_SIGNED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="neliel-android-$NELIEL_BUILD_CODE"
+          # Never replace an already published build with different bytes.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release already exists; new builds require a new workflow run."
+            exit 0
+          fi
+          gh release create "$tag" signed-output/Neliel-Android.apk signed-output/SHA256SUMS.txt --target "$GITHUB_SHA" --title "Neliel Android $NELIEL_BUILD_CODE" --notes "Signed Android ARM64 update. Commit $GITHUB_SHA. Install over the previous permanently signed Neliel version." --prerelease
       - name: Upload APK for testing
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
