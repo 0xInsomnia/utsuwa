@@ -106,6 +106,8 @@ export function chooseTransport(meta: { isLocal?: boolean } | undefined, tauri: 
 /** URL and headers for a direct provider call. Throws when the call can't be made. */
 export function providerEndpoint(provider: LLMProvider, apiKey?: string, baseURL?: string) {
 	const isLocal = isLocalLLMProvider(provider);
+	apiKey = apiKey?.trim().replace(/^Bearer\s+/i, '').trim();
+	baseURL = baseURL?.trim();
 	// Custom OpenAI-compatible endpoints may or may not need a key, so don't force one.
 	if (!apiKey && !isLocal && provider !== 'openai-compatible') {
 		throw new Error('API key required');
@@ -122,6 +124,9 @@ export function providerEndpoint(provider: LLMProvider, apiKey?: string, baseURL
 		throw new Error(`Unknown provider: ${provider}`);
 	}
 
+	if (isVeniceApi(base) && !apiKey) {
+		throw new Error('Venice: chiave API mancante. Inseriscila nelle impostazioni del provider OpenAI-Compatible.');
+	}
 	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
 	if (provider === 'anthropic') {
 		headers['x-api-key'] = apiKey || '';
@@ -211,6 +216,39 @@ export async function completeJson(request: JsonRequest): Promise<string | null>
 	}
 }
 
+// Never send the saved key to a diagnostic endpoint on another host.
+function isVeniceApi(base: string): boolean {
+	try {
+		const url = new URL(base);
+		return url.origin === 'https://api.venice.ai' && url.pathname.replace(/\/+$/, '') === '/api/v1';
+	} catch { return false; }
+}
+
+async function diagnoseVeniceAuth(base: string, headers: Record<string, string>, signal?: AbortSignal): Promise<string> {
+	if (!headers.Authorization) return 'Venice: chiave API mancante.';
+	const controller = new AbortController();
+	const abort = () => controller.abort(signal?.reason);
+	if (signal?.aborted) return 'Venice: richiesta annullata.';
+	signal?.addEventListener('abort', abort, { once: true });
+	const timer = setTimeout(() => controller.abort(), 8000);
+	try {
+		const response = await providerFetch(base.replace(/\/+$/, '') + '/api_keys/rate_limits', {
+			method: 'GET', headers: { Authorization: headers.Authorization }, signal: controller.signal
+		});
+		if (response.status === 401) return 'Venice: autenticazione rifiutata anche dal test della chiave (HTTP 401). Controlla chiave e permessi.';
+		if (!response.ok) return 'Venice: chat rifiutata (HTTP 401/403); test chiave HTTP ' + response.status + '.';
+		const json = await response.json().catch(() => null);
+		if (json?.data?.accessPermitted === false) return 'Venice: chiave riconosciuta, ma accesso API non consentito. Controlla account e crediti.';
+		if (json?.data?.accessPermitted === true) return 'Venice: chiave riconosciuta e accesso API consentito; chat rifiutata. Verifica modello e autorizzazioni.';
+		return 'Venice: test chiave HTTP 200, ma risposta chat non autorizzata. Verifica modello e configurazione.';
+	} catch {
+		return 'Venice: chat non autorizzata; test della chiave non riuscito.';
+	} finally {
+		clearTimeout(timer);
+		signal?.removeEventListener('abort', abort);
+	}
+}
+
 async function streamDirect(
 	options: ChatRequest,
 	onText: (fullText: string) => void,
@@ -266,8 +304,12 @@ async function streamDirect(
 			looksLikeHtml(bodyText) ? bodyText : providerBodyMessage(response.status, bodyText),
 			providerBaseURL
 		);
+		if (isVeniceApi(providerBaseURL) && (response.status === 401 || response.status === 403)) {
+			const diagnosis = await diagnoseVeniceAuth(providerBaseURL, headers, options.signal);
+			throw new ProviderError(diagnosis, false);
+		}
 		throw new ProviderError(
-			isLocal && response.status === 404 ? `${msg}. Pull or select an installed model.` : msg,
+			isLocal && response.status === 404 ? `${msg}. Pull or select an installed model.` : `HTTP ${response.status} — ${msg}`,
 			isTransientStatus(response.status),
 			parseRetryAfter(response.headers.get('retry-after'))
 		);
