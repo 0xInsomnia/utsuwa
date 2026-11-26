@@ -65,7 +65,7 @@
   ],
   "platforms": [
     "linux",
-    "macos",
+    "macOS",
     "windows"
   ]
 }
