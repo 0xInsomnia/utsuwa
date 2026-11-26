@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import SettingsSection from './SettingsSection.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -38,11 +39,11 @@
 			// The browser shows its own download UI; the desktop app writes silently,
 			// so tell the user where the file went.
 			if (savedToDownloads) {
-				exportMessage = { kind: 'success', text: `Saved to your Downloads folder as ${filename}` };
+				exportMessage = { kind: 'success', text: m.app_data_saved_downloads({ filename }) };
 			}
 		} catch (e) {
 			console.error('Export failed:', e);
-			exportMessage = { kind: 'error', text: `Export failed: ${e instanceof Error ? e.message : String(e)}` };
+			exportMessage = { kind: 'error', text: m.app_data_export_failed({ error: e instanceof Error ? e.message : String(e) }) };
 		} finally {
 			isExporting = false;
 		}
@@ -66,14 +67,14 @@
 				const validated = validateSaveFile(json);
 
 				if (!validated) {
-					importError = 'Invalid save file format';
+					importError = m.app_data_invalid_format();
 					importFile = null;
 					return;
 				}
 
 				importPreview = getSaveFilePreview(validated);
 			} catch {
-				importError = 'Failed to parse JSON file';
+				importError = m.app_data_parse_json_failed();
 				importFile = null;
 			}
 		};
@@ -93,13 +94,13 @@
 					try {
 						const json = JSON.parse(e.target?.result as string);
 						const validated = validateSaveFile(json);
-						if (!validated) reject(new Error('Invalid save file'));
+						if (!validated) reject(new Error(m.app_data_invalid_file()));
 						else resolve(validated);
 					} catch {
-						reject(new Error('Failed to parse file'));
+						reject(new Error(m.app_data_parse_failed()));
 					}
 				};
-				reader.onerror = () => reject(new Error('Failed to read file'));
+				reader.onerror = () => reject(new Error(m.app_data_read_failed()));
 				reader.readAsText(importFile!);
 			});
 
@@ -113,7 +114,7 @@
 				window.location.reload();
 			}, 1500);
 		} catch (e) {
-			importError = e instanceof Error ? e.message : 'Import failed';
+			importError = e instanceof Error ? e.message : m.app_data_import_failed();
 		} finally {
 			isImporting = false;
 		}
@@ -156,22 +157,21 @@
 </script>
 
 <div class="data-management">
-	<header class="page-header"><h2>Data Management</h2>
+	<header class="page-header"><h2>{m.app_data_title()}</h2>
 	<p>
-		Export your data as a save file or import a previous save. All data is stored locally in your
-		browser.
+		{m.app_data_intro()}
 	</p></header>
 
 	<div class="actions">
 		<!-- Export -->
-		<SettingsSection title="Export Save" description="Download all your data as a JSON file. Includes character states, memories, conversation history, and milestones.">
+		<SettingsSection title={m.app_data_export_title()} description={m.app_data_export_desc()}>
 			<Button variant="secondary" onclick={handleExport} disabled={isExporting}>
 				{#snippet children()}
 					{#if isExporting}
-						Exporting...
+						{m.app_data_exporting()}
 					{:else}
 						<Icon name="download" size={16} />
-						Download Save File
+						{m.app_data_download()}
 					{/if}
 				{/snippet}
 			</Button>
@@ -187,14 +187,14 @@
 		</SettingsSection>
 
 		<!-- Import -->
-		<SettingsSection title="Import Save" description="Restore data from a previously exported save file.">
+		<SettingsSection title={m.app_data_import_title()} description={m.app_data_import_desc()}>
 
 			<input
 				type="file"
 				accept=".json"
 				onchange={handleFileSelect}
 				bind:this={fileInput}
-				class="settings-field settings-file" aria-label="Import save file"
+				class="settings-field settings-file" aria-label={m.app_data_import_file()}
 			/>
 
 			{#if importError}
@@ -207,11 +207,11 @@
 			{#if importSuccess}
 				<div class="success-message" transition:pop={{ duration: 200, y: 6 }}>
 					<Icon name="check" size={16} />
-					Imported {importSuccess.imported} records
+					{m.app_data_imported({ count: importSuccess.imported })}
 					{#if importSuccess.skipped > 0}
-						(skipped {importSuccess.skipped})
+						{m.app_data_skipped({ count: importSuccess.skipped })}
 					{/if}
-					- Reloading...
+					{m.app_data_reloading()}
 				</div>
 			{/if}
 
@@ -219,21 +219,21 @@
 				<div class="import-preview" transition:slideOpen>
 					<div class="preview-header">
 						<Icon name="file" size={16} />
-						<span>Save File Preview</span>
+						<span>{m.app_data_preview()}</span>
 					</div>
 					<div class="preview-details">
 						<div class="preview-row">
-							<span class="label">Exported:</span>
+							<span class="label">{m.app_data_exported()}</span>
 							<span class="value">{formatDate(importPreview.exportedAt)}</span>
 						</div>
 						<div class="preview-row">
-							<span class="label">Character:</span>
-							<span class="value">{importPreview.characterName || 'Unknown'}</span>
+							<span class="label">{m.app_data_character()}</span>
+							<span class="value">{importPreview.characterName || m.app_data_unknown()}</span>
 						</div>
 						<div class="preview-row">
-							<span class="label">Records:</span>
+							<span class="label">{m.app_data_records()}</span>
 							<span class="value">
-								{importPreview.counts.facts} facts, {importPreview.counts.conversationTurns} messages
+								{m.app_data_counts({ facts: importPreview.counts.facts, messages: importPreview.counts.conversationTurns })}
 							</span>
 						</div>
 					</div>
@@ -241,27 +241,27 @@
 					<div class="import-mode">
 						<label class="mode-option">
 							<input type="radio" bind:group={importMode} value="replace" />
-							<span class="mode-label">Replace</span>
-							<span class="mode-description">Clear existing data and import</span>
+							<span class="mode-label">{m.app_data_replace()}</span>
+							<span class="mode-description">{m.app_data_replace_desc()}</span>
 						</label>
 						<label class="mode-option">
 							<input type="radio" bind:group={importMode} value="merge" />
-							<span class="mode-label">Merge</span>
-							<span class="mode-description">Add to existing data (skip duplicates)</span>
+							<span class="mode-label">{m.app_data_merge()}</span>
+							<span class="mode-description">{m.app_data_merge_desc()}</span>
 						</label>
 					</div>
 
 					<div class="import-actions">
 						<Button variant="secondary" onclick={cancelImport}>
-							{#snippet children()}Cancel{/snippet}
+							{#snippet children()}{m.app_common_cancel()}{/snippet}
 						</Button>
 						<Button onclick={handleImport} disabled={isImporting}>
 							{#snippet children()}
 								{#if isImporting}
-									Importing...
+									{m.app_data_importing()}
 								{:else}
 									<Icon name="upload" size={16} />
-									Import
+									{m.app_data_import()}
 								{/if}
 							{/snippet}
 						</Button>
@@ -271,23 +271,23 @@
 		</SettingsSection>
 
 		<!-- Clear Data -->
-		<SettingsSection title="Clear All Data" description="Permanently delete everything Utsuwa stores on this device: saves, memories, conversations, reminders, photos, custom models and animations, backgrounds, provider keys, MCP servers, and settings. This cannot be undone. An export only holds your save, memories, and conversations.">
+		<SettingsSection title={m.app_data_clear_title()} description={m.app_data_clear_desc()}>
 
 			{#if showClearConfirm}
 				<div class="confirm-message" transition:pop={{ duration: 200, y: 6 }}>
 					<Icon name="warning" size={16} />
-					Are you sure? Saves, memories, conversations, reminders, photos, custom models and animations, backgrounds, provider keys, MCP servers, and settings will all be deleted.
+					{m.app_data_clear_confirm()}
 				</div>
 				<div class="confirm-actions">
 					<Button variant="secondary" onclick={() => (showClearConfirm = false)}>
-						{#snippet children()}Cancel{/snippet}
+						{#snippet children()}{m.app_common_cancel()}{/snippet}
 					</Button>
 					<Button variant="danger" onclick={handleClear} disabled={isClearing}>
 						{#snippet children()}
 							{#if isClearing}
-								Clearing...
+								{m.app_data_clearing()}
 							{:else}
-								Yes, Delete Everything
+								{m.app_data_clear_yes()}
 							{/if}
 						{/snippet}
 					</Button>
@@ -296,7 +296,7 @@
 				<Button variant="danger" onclick={handleClear}>
 					{#snippet children()}
 						<Icon name="trash" size={16} />
-						Clear All Data
+						{m.app_data_clear_title()}
 					{/snippet}
 				</Button>
 			{/if}

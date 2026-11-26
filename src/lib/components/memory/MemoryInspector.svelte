@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { rangeProgress } from '$lib/utils/range-progress';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { liveQuery } from 'dexie';
@@ -7,6 +8,7 @@
 	import { getWorkingMemory } from '$lib/engine/memory-session';
 	import { deleteFact } from '$lib/services/storage/memory';
 	import { characterStore } from '$lib/stores/character.svelte';
+	import { stageLabel } from '$lib/i18n/labels';
 	import type { Fact, FactCategory, SessionSummary, ConversationTurn } from '$lib/types/memory';
 	import { Button } from '$lib/components/ui';
 	import SettingsSection from '$lib/components/settings/SettingsSection.svelte';
@@ -32,9 +34,9 @@
 	} = $props();
 	const tab = $derived(view);
 	const categories: { value: FactCategory; label: string }[] = [
-		{ value: 'user', label: 'About you' },
-		{ value: 'relationship', label: 'Relationship' },
-		{ value: 'shared_experience', label: 'Shared experience' }
+		{ value: 'user', label: m.app_mem_cat_user() },
+		{ value: 'relationship', label: m.app_stats_relationship() },
+		{ value: 'shared_experience', label: m.app_mem_cat_shared() }
 	];
 	const PAGE_SIZE = 25;
 	let query = $state('');
@@ -117,7 +119,7 @@
 					pageIndex = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
 			},
 			error: () => {
-				loadError = 'Could not load memories from this device.';
+				loadError = m.app_mem_load_error();
 				loading = false;
 			}
 		});
@@ -143,10 +145,10 @@
 			pageIndex = 0;
 			query = '';
 			category = 'all';
-			notice = 'Memory saved.';
+			notice = m.app_mem_saved_notice();
 			if (factId !== undefined) onShowAll?.();
 		} catch {
-			actionError = 'Could not save that memory. Your text is still here so you can try again.';
+			actionError = m.app_mem_save_error();
 		} finally {
 			busy = false;
 		}
@@ -159,48 +161,48 @@
 		try {
 			await deleteFact(id);
 			confirmId = undefined;
-			notice = 'Memory deleted.';
+			notice = m.app_mem_deleted_notice();
 		} catch {
-			actionError = 'Could not delete that memory. Please try again.';
+			actionError = m.app_mem_delete_error();
 		} finally {
 			busy = false;
 		}
 	}
 	function date(value: Date | undefined) {
-		return value ? new Date(value).toLocaleString() : 'Not recorded';
+		return value ? new Date(value).toLocaleString() : m.app_mem_not_recorded();
 	}
 </script>
 
 <div class="memory-inspector">
 	{#if factId !== undefined && view === 'facts'}<div class="selection-notice">
-			<span>Selected from the graph</span><Button variant="secondary" size="sm" onclick={onShowAll}
-				>Show all facts</Button
+			<span>{m.app_mem_from_graph()}</span><Button variant="secondary" size="sm" onclick={onShowAll}
+				>{m.app_mem_show_all()}</Button
 			>
 		</div>{/if}
 	{#if view === 'facts'}
 		<SettingsSection
-			title="Remembered facts"
-			description="Stored on this device. Adding or deleting a fact affects future conversations."
+			title={m.app_mem_facts_title()}
+			description={m.app_mem_facts_desc()}
 		>
 			<div class="filters">
 				<label
-					>Search memories<input
+					>{m.app_mem_search()}<input
 						class="settings-field"
 						type="search"
 						bind:value={query}
-						placeholder="Find a memory"
+						placeholder={m.app_mem_search_placeholder()}
 					/></label
 				>
 				<label
-					>Category<Select label="Category" bind:value={category} options={[{ value: 'all', label: 'All categories' }, ...categories]} /></label
+					>{m.app_mem_category()}<Select label={m.app_mem_category()} bind:value={category} options={[{ value: 'all', label: m.app_mem_all_categories() }, ...categories]} /></label
 				>
 			</div>
 			{#if !loading && !loadError && facts.length === 0}<p class="empty">
 					{query || category !== 'all'
-						? 'No memories match these filters.'
+						? m.app_mem_no_match()
 						: factId !== undefined
-							? 'This memory is no longer saved. Choose Show all facts to see your other memories.'
-							: 'No facts saved yet. Add one below or let them grow through conversation.'}
+							? m.app_mem_gone()
+							: m.app_mem_none()}
 				</p>{/if}
 			<ul class="records">
 				{#each facts as fact (fact.id)}
@@ -209,24 +211,24 @@
 						<div class="record-footer">
 							<time>{date(fact.createdAt)}</time>
 							{#if confirmId === fact.id}
-								<div class="confirm" role="group" aria-label="Confirm memory deletion">
-									<span>Delete this memory?</span><Button
+								<div class="confirm" role="group" aria-label={m.app_mem_confirm_delete()}>
+									<span>{m.app_mem_delete_question()}</span><Button
 										size="sm"
 										variant="secondary"
 										disabled={busy}
-										onclick={() => (confirmId = undefined)}>Cancel</Button
+										onclick={() => (confirmId = undefined)}>{m.app_common_cancel()}</Button
 									><Button
 										size="sm"
 										variant="danger"
 										disabled={busy}
-										onclick={() => removeMemory(fact.id!)}>Delete memory</Button
+										onclick={() => removeMemory(fact.id!)}>{m.app_mem_delete_memory()}</Button
 									>
 								</div>
 							{:else}<Button
 									size="sm"
 									variant="ghost"
 									disabled={busy}
-									onclick={() => (confirmId = fact.id)}>Delete</Button
+									onclick={() => (confirmId = fact.id)}>{m.app_anim_delete()}</Button
 								>{/if}
 						</div>
 					</li>
@@ -235,16 +237,16 @@
 		</SettingsSection>
 	{:else if view === 'session'}
 		<SettingsSection
-			title="Current session"
-			description="Saved turns from this run, or the latest saved session after a reload."
+			title={m.app_mem_current_title()}
+			description={m.app_mem_current_desc()}
 		>
 			{#if !loading && !turns.length}<p class="empty">
-					No saved turns in the current session.
+					{m.app_mem_no_turns()}
 				</p>{/if}
 			<ul class="records">
 				{#each turns as turn (turn.id)}<li>
 						<p class="metadata">
-							{turn.role === 'user' ? 'You' : characterStore.name} · {date(turn.createdAt)}
+							{turn.role === 'user' ? m.app_mem_you() : characterStore.name} · {date(turn.createdAt)}
 						</p>
 						<p class="fact-content">{turn.content}</p>
 					</li>{/each}
@@ -252,81 +254,79 @@
 		</SettingsSection>
 	{:else if view === 'sessions'}
 		<SettingsSection
-			title="Saved sessions"
-			description="Conversation summaries already recorded by the memory engine."
+			title={m.app_mem_sessions_title()}
+			description={m.app_mem_sessions_desc()}
 		>
-			{#if !loading && !sessions.length}<p class="empty">No sessions saved yet.</p>{/if}
+			{#if !loading && !sessions.length}<p class="empty">{m.app_mem_no_sessions()}</p>{/if}
 			<ul class="records">
 				{#each sessions as session (session.id)}<li>
 						<h4>{date(session.startedAt)}</h4>
-						<p class="fact-content">{session.summary || 'No summary recorded yet.'}</p>
+						<p class="fact-content">{session.summary || m.app_mem_no_summary()}</p>
 						<p class="metadata">
-							{session.messageCount} messages · {session.endedAt
-								? `Last turn ${date(session.endedAt)}`
-								: 'No turns recorded'}
+							{m.app_mem_messages({ count: session.messageCount })} · {session.endedAt
+								? m.app_mem_last_turn({ date: date(session.endedAt) })
+								: m.app_mem_no_turns_recorded()}
 						</p>
 						{#if session.keyTopics.length}<p class="metadata">
-								Topics: {session.keyTopics.join(', ')}
+								{m.app_mem_topics({ topics: session.keyTopics.join(', ') })}
 							</p>{/if}{#if session.emotionalArc}<p>{session.emotionalArc}</p>{/if}
 					</li>{/each}
 			</ul>
 		</SettingsSection>
 	{:else if view === 'state'}
 		<SettingsSection
-			title="Character state"
-			description="A read-only view of your companion's current state."
+			title={m.app_mem_state_title()}
+			description={m.app_mem_state_desc()}
 		>
 			<dl>
-				<dt>Name</dt>
+				<dt>{m.app_onboarding_name_label()}</dt>
 				<dd>{charState.name}</dd>
-				<dt>Mode</dt>
-				<dd>{charState.appMode === 'companion' ? 'Companion' : 'Dating sim'}</dd>
-				<dt>Mood</dt>
+				<dt>{m.app_mem_mode()}</dt>
+				<dd>{charState.appMode === 'companion' ? m.app_onboarding_mode_companion() : m.app_onboarding_mode_dating()}</dd>
+				<dt>{m.app_mem_mood()}</dt>
 				<dd>{charState.mood.primary} · {charState.mood.intensity}%</dd>
-				<dt>Stage</dt>
-				<dd>{characterStore.stageInfo.name}</dd>
-				<dt>Energy</dt>
+				<dt>{m.app_mem_stage()}</dt>
+				<dd>{stageLabel(charState.relationshipStage).name}</dd>
+				<dt>{m.app_stats_energy()}</dt>
 				<dd>{charState.energy}</dd>
-				<dt>Conversations</dt>
+				<dt>{m.app_mem_conversations()}</dt>
 				<dd>{charState.totalInteractions}</dd>
-				{#if charState.appMode !== 'companion'}<dt>Affection</dt>
+				{#if charState.appMode !== 'companion'}<dt>{m.app_stats_affection()}</dt>
 					<dd>{charState.affection}</dd>
-					<dt>Trust</dt>
+					<dt>{m.app_stats_trust()}</dt>
 					<dd>{charState.trust}</dd>
-					<dt>Intimacy</dt>
+					<dt>{m.app_stats_intimacy()}</dt>
 					<dd>{charState.intimacy}</dd>
-					<dt>Comfort</dt>
+					<dt>{m.app_stats_comfort()}</dt>
 					<dd>{charState.comfort}</dd>
-					<dt>Respect</dt>
+					<dt>{m.app_stats_respect()}</dt>
 					<dd>{charState.respect}</dd>{/if}
 			</dl>
 		</SettingsSection>
 	{:else}<SettingsSection
-			title="Response parser"
-			description="Inspect the tags and state changes a sample response would produce."
+			title={m.app_mem_parser_title()}
+			description={m.app_mem_parser_desc()}
 			><ParserTest /></SettingsSection
 		>{/if}
 	{#if !['state', 'test'].includes(tab)}
 		{#if loadError}<div role="alert" class="error">
 				{loadError}
-				<Button size="sm" variant="secondary" onclick={() => retry++}>Retry</Button>
+				<Button size="sm" variant="secondary" onclick={() => retry++}>{m.app_mem_retry()}</Button>
 			</div>
-		{:else if loading}<p role="status">Loading memories...</p>
-		{:else}<nav class="pagination" aria-label="Memory pages">
+		{:else if loading}<p role="status">{m.app_mem_loading()}</p>
+		{:else}<nav class="pagination" aria-label={m.app_mem_pages()}>
 				<span
-					>{total}
-					{tab === 'facts' ? 'facts' : tab === 'sessions' ? 'sessions' : 'turns'} · Page {pageIndex +
-						1} of {Math.max(1, Math.ceil(total / PAGE_SIZE))}</span
+					>{(tab === 'facts' ? m.app_mem_page_facts : tab === 'sessions' ? m.app_mem_page_sessions : m.app_mem_page_turns)({ total, page: pageIndex + 1, pages: Math.max(1, Math.ceil(total / PAGE_SIZE)) })}</span
 				><Button
 					variant="secondary"
 					size="sm"
 					disabled={pageIndex === 0}
-					onclick={() => pageIndex--}>Previous</Button
+					onclick={() => pageIndex--}>{m.app_mem_previous()}</Button
 				><Button
 					variant="secondary"
 					size="sm"
 					disabled={(pageIndex + 1) * PAGE_SIZE >= total}
-					onclick={() => pageIndex++}>Next</Button
+					onclick={() => pageIndex++}>{m.app_common_next()}</Button
 				>
 			</nav>{/if}
 	{/if}
@@ -334,25 +334,25 @@
 	{#if actionError}<p class="error" role="alert">{actionError}</p>{/if}
 	{#if tab === 'facts'}
 		<SettingsSection
-			title="Add a memory"
-			description="Save something you want your companion to know."
+			title={m.app_mem_add_title()}
+			description={m.app_mem_add_desc()}
 		>
 			<form onsubmit={addMemory}>
 				<label
-					>Memory<textarea
+					>{m.app_mem_memory()}<textarea
 						class="settings-field"
 						bind:value={content}
 						required
 						maxlength={2000}
 						rows={3}
-						placeholder="For example, I prefer tea to coffee."
+						placeholder={m.app_mem_add_placeholder()}
 						disabled={busy}></textarea></label
 				>
 				<div class="filters">
 					<label
-						>Memory category<Select label="Memory category" bind:value={newCategory} disabled={busy} options={categories} /></label
+						>{m.app_mem_add_category()}<Select label={m.app_mem_add_category()} bind:value={newCategory} disabled={busy} options={categories} /></label
 					><label
-						>Importance <span>{importance}</span><input
+						>{m.app_mem_importance_label()} <span>{importance}</span><input
 							class="settings-range"
 							type="range" use:rangeProgress={importance}
 							min={0}
@@ -364,7 +364,7 @@
 					>
 				</div>
 				<Button type="submit" disabled={busy || !content.trim()}
-					>{busy ? 'Saving...' : 'Add memory'}</Button
+					>{busy ? m.app_mem_saving() : m.app_mem_add()}</Button
 				>
 			</form>
 		</SettingsSection>

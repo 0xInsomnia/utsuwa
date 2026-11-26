@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import type { FactCategory } from '$lib/types/memory';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -12,10 +13,10 @@
 	import '../settings-page.css';
 
 	const tabs = [
-		{ value: 'graph', label: 'Graph' },
-		{ value: 'facts', label: 'Facts' },
-		{ value: 'sessions', label: 'Sessions' },
-		{ value: 'settings', label: 'Settings' }
+		{ value: 'graph', label: m.app_mem_tab_graph() },
+		{ value: 'facts', label: m.app_mem_tab_facts() },
+		{ value: 'sessions', label: m.app_mem_tab_sessions() },
+		{ value: 'settings', label: m.app_controls_settings() }
 	];
 	const tab = $derived(
 		tabs.find((item) => item.value === page.url.searchParams.get('view'))?.value ?? 'graph'
@@ -51,21 +52,21 @@
 
 <div class="page memory-page">
 	<header class="page-header">
-		<h2>Memory</h2>
-		<p>Explore what your companion remembers and keep it accurate.</p>
+		<h2>{m.app_nav_memory()}</h2>
+		<p>{m.app_mem_intro()}</p>
 	</header>
-	<Tabs bind:value={() => tab, navigate} items={tabs} label="Memory views">
+	<Tabs bind:value={() => tab, navigate} items={tabs} label={m.app_mem_views()}>
 		{#snippet children(view)}
 			{#if view === 'graph'}
 				<div class="graph-heading">
-					<p>Connections show similarities between memories. Select a memory to see its details.</p>
+					<p>{m.app_mem_graph_intro()}</p>
 					<Button
 						variant="secondary"
 						size="sm"
 						onclick={(event: MouseEvent) => {
 							if (event.currentTarget instanceof HTMLElement) event.currentTarget.focus();
 							expanded = true;
-						}}><Icon name="external-link" size={16} />Expand graph</Button
+						}}><Icon name="external-link" size={16} />{m.app_mem_expand()}</Button
 					>
 				</div>
 				{#if !expanded}<MemoryGraph
@@ -98,10 +99,10 @@
 				<Tabs
 					bind:value={sessionView}
 					items={[
-						{ value: 'session', label: 'Current' },
-						{ value: 'sessions', label: 'Saved' }
+						{ value: 'session', label: m.app_mem_current() },
+						{ value: 'sessions', label: m.app_mem_saved() }
 					]}
-					label="Session views"
+					label={m.app_mem_session_views()}
 				>
 					{#snippet children(session)}<MemoryInspector
 							view={session === 'session' ? 'session' : 'sessions'}
@@ -109,30 +110,28 @@
 				</Tabs>
 			{:else}
 				<SettingsSection
-					title="Memory storage"
-					description="Memories are saved on this device and used in future conversations."
+					title={m.app_mem_storage()}
+					description={m.app_mem_storage_desc()}
 				>
 					<p class="storage-copy">
-						Use Facts to add or remove a memory. Back up or restore your saved data from Data
-						settings.
+						{m.app_mem_storage_copy()}
 					</p>
 					<Button variant="secondary" href={localPath('app', '/settings/data')}
-						>Data settings<Icon name="arrow-right" size={16} /></Button
+						>{m.app_mem_data_settings()}<Icon name="arrow-right" size={16} /></Button
 					>
 				</SettingsSection>
 				<details class="advanced">
-					<summary>Advanced</summary>
+					<summary>{m.app_mem_advanced()}</summary>
 					<p>
-						Inspect character state or test how a response is parsed. These tools do not change your
-						saved state.
+						{m.app_mem_advanced_copy()}
 					</p>
 					<Tabs
 						bind:value={advancedView}
 						items={[
-							{ value: 'state', label: 'State' },
-							{ value: 'test', label: 'Parser test' }
+							{ value: 'state', label: m.app_mem_state() },
+							{ value: 'test', label: m.app_mem_parser() }
 						]}
-						label="Advanced memory tools"
+						label={m.app_mem_advanced_tools()}
 					>
 						{#snippet children(tool)}<MemoryInspector
 								view={tool === 'state' ? 'state' : 'test'}

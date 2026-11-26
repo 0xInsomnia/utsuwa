@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Dialog } from 'bits-ui';
 	import { Icon } from '$lib/components/ui';
 	import type { FactCategory } from '$lib/types/memory';
@@ -23,12 +24,12 @@
 		<Dialog.Content class="expanded-memory-graph">
 			<header>
 				<div>
-					<Dialog.Title class="expanded-memory-title">Memory graph</Dialog.Title>
+					<Dialog.Title class="expanded-memory-title">{m.app_graph_title()}</Dialog.Title>
 					<Dialog.Description class="expanded-memory-description"
-						>Select a memory to inspect it, or drag and zoom to explore connections.</Dialog.Description
+						>{m.app_graph_modal_desc()}</Dialog.Description
 					>
 				</div>
-				<Dialog.Close class="btn btn-ghost btn-icon" aria-label="Collapse graph"
+				<Dialog.Close class="btn btn-ghost btn-icon" aria-label={m.app_graph_collapse()}
 					><Icon name="x" size={20} /></Dialog.Close
 				>
 			</header>

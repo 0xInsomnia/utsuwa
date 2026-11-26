@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import Select from '$lib/components/ui/Select.svelte';
 	import { onMount, untrack } from 'svelte';
 	import type ForceGraph from 'force-graph';
@@ -37,9 +38,9 @@
 	let dark = $state(false);
 	let reducedMotion = $state(false);
 	const categoryOptions: { value: FactCategory; label: string }[] = [
-		{ value: 'user', label: 'About you' },
-		{ value: 'relationship', label: 'Relationship' },
-		{ value: 'shared_experience', label: 'Shared' }
+		{ value: 'user', label: m.app_mem_cat_user() },
+		{ value: 'relationship', label: m.app_stats_relationship() },
+		{ value: 'shared_experience', label: m.app_mem_cat_shared_short() }
 	];
 	const data = $derived(
 		filterGraph(fullData, { categories: new Set(categories), minSimilarity: 0.5 })
@@ -164,14 +165,14 @@
 				const canvas = container.querySelector('canvas');
 				canvas?.setAttribute(
 					'aria-label',
-					'Memory connections. Use Inspect a memory to select a node with the keyboard.'
+					m.app_graph_canvas()
 				);
 				canvas?.setAttribute('role', 'img');
 			}
 		} catch {
 			if (!destroyed)
 				error =
-					'Could not load the memory graph. Your saved memories are still available in Facts.';
+					m.app_graph_error();
 		} finally {
 			if (!destroyed) loading = false;
 		}
@@ -208,7 +209,7 @@
 
 <div class="memory-graph" class:expanded>
 	<div class="controls">
-		<div class="category-toggles" role="group" aria-label="Graph categories">
+		<div class="category-toggles" role="group" aria-label={m.app_graph_categories()}>
 			{#each categoryOptions as category}<Button
 					variant={categories.includes(category.value) ? 'secondary' : 'ghost'}
 					size="sm"
@@ -225,64 +226,63 @@
 				selectedId = null;
 				fit();
 			}}
-			disabled={loading || !data.nodes.length}><Icon name="refresh" size={14} />Reset view</Button
+			disabled={loading || !data.nodes.length}><Icon name="refresh" size={14} />{m.app_graph_reset()}</Button
 		>
 	</div>
 	<label class="memory-picker"
-		>Inspect a memory
-		<Select label="Inspect a memory" value={selected ? String(selected.id) : ''} onchange={(value) => selectedId = value ? Number(value) : null} disabled={!data.nodes.length} options={[{ value: '', label: 'Select a memory' }, ...data.nodes.map(node => ({ value: String(node.id), label: node.content.length > 90 ? `${node.content.slice(0, 90)}…` : node.content }))]} />
+		>{m.app_graph_inspect()}
+		<Select label={m.app_graph_inspect()} value={selected ? String(selected.id) : ''} onchange={(value) => selectedId = value ? Number(value) : null} disabled={!data.nodes.length} options={[{ value: '', label: m.app_graph_select() }, ...data.nodes.map(node => ({ value: String(node.id), label: node.content.length > 90 ? `${node.content.slice(0, 90)}…` : node.content }))]} />
 	</label>
 	<div class="graph-layout" class:has-selection={!!selected}>
 		<div class="graph-container" bind:this={container}>
-			{#if loading}<div class="graph-message" role="status">Loading graph...</div>
+			{#if loading}<div class="graph-message" role="status">{m.app_graph_loading()}</div>
 			{:else if error}<div class="graph-message" role="alert">
 					<p>{error}</p>
-					<Button variant="secondary" onclick={load}>Retry graph</Button>
+					<Button variant="secondary" onclick={load}>{m.app_graph_retry()}</Button>
 				</div>
 			{:else if !fullData.nodes.length}<div class="graph-message">
 					<Icon name="brain" size={28} />
-					<h3>No connected memories yet</h3>
+					<h3>{m.app_graph_empty_title()}</h3>
 					<p>
-						The graph shows memories once their connections are ready. You can still read and manage
-						all saved memories in Facts.
+						{m.app_graph_empty()}
 					</p>
-					<Button variant="secondary" onclick={onOpenFacts}>View facts</Button>
+					<Button variant="secondary" onclick={onOpenFacts}>{m.app_graph_view_facts()}</Button>
 				</div>
 			{:else if !data.nodes.length}<div class="graph-message">
-					<p>No memories match these categories.</p>
+					<p>{m.app_graph_no_match()}</p>
 					<Button
 						variant="secondary"
 						onclick={() => (categories = ['user', 'relationship', 'shared_experience'])}
-						>Show all categories</Button
+						>{m.app_graph_show_all()}</Button
 					>
 				</div>{/if}
 		</div>
-		{#if selected}<aside class="selected-detail" aria-label="Memory details">
+		{#if selected}<aside class="selected-detail" aria-label={m.app_graph_details()}>
 				<div class="detail-heading">
-					<h3>Memory details</h3>
+					<h3>{m.app_graph_details()}</h3>
 					<Button
 						variant="ghost"
 						size="sm"
-						aria-label="Close memory details"
+						aria-label={m.app_graph_close_details()}
 						onclick={() => (selectedId = null)}><Icon name="x" size={14} /></Button
 					>
 				</div>
 				<MemoryFactSummary fact={selected} />
 				<dl>
-					<dt>Referenced</dt>
-					<dd>{selected.referenceCount} times</dd>
-					<dt>Created</dt>
+					<dt>{m.app_graph_referenced()}</dt>
+					<dd>{m.app_graph_times({ count: selected.referenceCount })}</dd>
+					<dt>{m.app_graph_created()}</dt>
 					<dd>{new Date(selected.createdAt).toLocaleString()}</dd>
 				</dl>
 				<Button variant="secondary" size="sm" onclick={() => onInspect(selected!.id)}
-					>Open in Facts<Icon name="arrow-right" size={14} /></Button
+					>{m.app_graph_open_facts()}<Icon name="arrow-right" size={14} /></Button
 				>
 			</aside>{/if}
 	</div>
 	<p class="graph-stats">
 		{data.nodes.length}
-		{data.nodes.length === 1 ? 'memory' : 'memories'} · {data.links.length}
-		{data.links.length === 1 ? 'connection' : 'connections'}
+		{data.nodes.length === 1 ? m.app_graph_memory() : m.app_graph_memories()} · {data.links.length}
+		{data.links.length === 1 ? m.app_graph_connection() : m.app_graph_connections()}
 	</p>
 </div>
 
