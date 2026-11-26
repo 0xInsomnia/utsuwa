@@ -242,7 +242,7 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 	const memoryBudget = getContextMemoryBudget(ctx.contextSize);
 	const memorySections: string[] = [];
 	if (mem.recentTurns.length > 0) {
-		const turnLimit = memoryBudget?.workingMemoryTurns ?? 6;
+		const turnLimit = memoryBudget?.workingMemoryTurns ?? 10;
 		const recentChat = mem.recentTurns
 			.slice(-turnLimit)
 			.map((t) => `${t.role === 'user' ? 'They' : 'You'}: ${t.content}`)
@@ -250,11 +250,13 @@ Energy: ${energyDesc} (${ctx.state.energy}/100)
 		memorySections.push(`Recent conversation:\n${recentChat}`);
 	}
 	if (mem.relevantFacts.length > 0) {
-		const factLimit = memoryBudget?.relevantFacts ?? 5;
+		const factLimit = memoryBudget?.relevantFacts ?? 10;
 		const factsText = mem.relevantFacts.slice(0, factLimit).map((f) => `- ${stripAngleBrackets(f.content)}`).join('\n');
 		memorySections.push(`Things you know about them:\n${factsText}`);
 	}
 
+	const lastSession = mem.recentSessions.find(s => s.summary?.trim());
+	if (lastSession?.summary) memorySections.push('Previous conversation summary (historical context): ' + stripAngleBrackets(lastSession.summary).slice(0, 1000));
 	if (memorySections.length > 0) {
 		parts.push(`<memory>\n${memorySections.join('\n\n')}\n</memory>`);
 	}
@@ -423,7 +425,7 @@ function buildMemoryLayer(ctx: PromptContext): string {
 
 	// Relevant facts
 	if (mem.relevantFacts.length > 0) {
-		const factLimit = memoryBudget?.relevantFacts ?? 5;
+		const factLimit = memoryBudget?.relevantFacts ?? 10;
 		const factsText = mem.relevantFacts.slice(0, factLimit).map((f) => `- ${stripAngleBrackets(f.content)}`).join('\n');
 		sections.push(`Things you know about them:\n${factsText}`);
 	}

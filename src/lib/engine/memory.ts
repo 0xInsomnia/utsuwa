@@ -65,7 +65,12 @@ export async function retrieveRelevantContext(
 ): Promise<RelevantContext> {
 	// Get recent turns from working memory
 	const turnLimit = contextSize ? getMemoryBudget(contextSize).workingMemoryTurns : 10;
-	const recentTurns = getRecentTurns(turnLimit);
+	let recentTurns = getRecentTurns(turnLimit);
+	// A returning Android app can receive a turn before asynchronous hydration.
+	if (recentTurns.length === 0) {
+		try { recentTurns = await memoryStorage.getConversationTurns({ limit: turnLimit }); }
+		catch (e) { console.debug('[Memory] Recent history unavailable:', e); }
+	}
 
 	// Search for relevant facts based on user message
 	let relevantFacts: Fact[] = [];
@@ -138,6 +143,30 @@ export async function retrieveRelevantContext(
 		}
 	} catch (e) {
 		console.error('[Memory] Failed to fetch relevant facts:', e);
+	}
+
+	// Manual memories must survive a semantic hit, an unavailable embedding model,
+	// and keyword mismatch. Prioritize direct lexical matches and explicitly saved
+	// facts, then fill the remaining budget with semantic and important facts.
+	try {
+		const all = await memoryStorage.getFacts();
+		const words = [...new Set(userMessage.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) || [])]
+			.filter(w => !['che','cosa','come','sono','della','delle','dello','degli','dove','quale','quali','quando','ricordi','ricordo','ricordati','sai','del','per','con','una','non','mio','mia','miei','mie','the','what','about','remember','know','you','your','and','with'].includes(w));
+		const score = (fact: Fact) => words.reduce((n, w) => n + (fact.content.toLowerCase().includes(w) ? 1 : 0), 0);
+		const manual = all.filter(f => f.source === 'manual' || f.source === 'explicit-user')
+			.sort((a,b) => score(b) - score(a) || b.importance - a.importance || b.createdAt.getTime() - a.createdAt.getTime());
+		const matching = all.filter(f => score(f) > 0).sort((a,b) => score(b) - score(a) || b.importance - a.importance);
+		const limit = contextSize ? getMemoryBudget(contextSize).relevantFacts : MAX_RELEVANT_FACTS;
+		const candidates = [...manual.filter(f => score(f) > 0), ...matching.slice(0, 3), ...manual, ...relevantFacts, ...all.slice(0, 5)];
+		const seen = new Set<string>();
+		relevantFacts = candidates.filter(f => {
+			const key = f.content.toLowerCase().trim();
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		}).slice(0, limit);
+	} catch (e) {
+		console.debug('[Memory] Manual memory retrieval unavailable:', e);
 	}
 
 	// Get recent sessions for context

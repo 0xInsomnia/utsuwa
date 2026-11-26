@@ -111,7 +111,11 @@ async function buildCompanionPrompt(
 		ttsToolCalling: shouldUseSpeechTools(llmProvider, speechEnabled, speechSettings),
 		avatarActions: toPromptActions(animationLibraryStore.enabledForLlm)
 	};
-	return buildSystemPrompt(context);
+	const name = context.persona.name.trim() || 'Neliel';
+	return buildSystemPrompt(context) + '\n\n<identity_and_continuity>\n' +
+		'Il tuo nome nella conversazione è ' + JSON.stringify(name) + '. Interpreta stabilmente questo personaggio: il provider e il modello LLM sono soltanto il motore tecnico, non il nome del personaggio. Non presentarti di nuovo a ogni messaggio. ' +
+		'Rispondi nella lingua usata dall interlocutore, con la personalità configurata. Usa i ricordi e i messaggi precedenti come contesto, senza ripeterli tutti o inventare ricordi. Non raccontare spontaneamente come funziona il tuo contesto, la memoria, i dati o il modello. ' +
+		'Parla del tuo abbigliamento soltanto quando pertinente alla conversazione o a un cambio effettivamente richiesto/eseguito. Non ripetere limiti tecnici o incertezze sui vestiti in conversazioni non pertinenti. Mantieni il formato di risposta e gli eventuali comandi vocali richiesti dalle istruzioni precedenti.\n</identity_and_continuity>';
 }
 
 /**
@@ -309,7 +313,7 @@ export async function sendCompanionMessage(
 		const { provider } = llm;
 		const contextSize = consciousnessSettings.contextSize || undefined;
 		// Only inspect the live avatar for relevant turns, never every frame.
-		const outfitQuestion = /\b(indoss\w*|vest\w*|abiti|abbigliamento|look|outfit|clothes|clothing|wear\w*|wardrobe|giacca|gonna|pantaloni|maglietta|camicia|scarpe|cappello|accessori|colore|toglit\w*|rimett\w*|cambiati|caldo|freddo)\b/i.test(content);
+		const outfitQuestion = /\b(indoss\w*|vest\w*|abiti|abbigliamento|look|outfit|clothes|clothing|wear\w*|wardrobe|giacca|gonna|pantaloni|maglietta|camicia|scarpe|cappello|accessori|toglit\w*|rimett\w*|cambiati|caldo|freddo)\b/i.test(content);
 		let observedRevision = -1;
 		let observedOutfit = '';
 		async function inspectLiveAvatar(): Promise<string> {
@@ -446,7 +450,7 @@ export async function sendCompanionMessage(
 		const { mcpTools, mcpToolNames, confirmToolNames, security } = await prepareMcpTurn(provider);
 		const wardrobeTargets = vrmStore.getWardrobeTargets();
 		if (outfitQuestion) vrmStore.setWardrobeActionStatus('Nessun cambio richiesto o eseguito in questo turno');
-		const wardrobeOffered = provider !== 'anthropic' && vrmStore.wardrobeEnabled && wardrobeTargets.length > 0;
+		const wardrobeOffered = provider !== 'anthropic' && vrmStore.wardrobeEnabled && wardrobeTargets.length > 0 && (outfitQuestion || vrmStore.wardrobeAutonomous);
 		const wardrobeName = 'neliel_set_wardrobe_visibility';
 		// Local tool shares the existing bounded tool loop, but never goes to an MCP server.
 		if (wardrobeOffered) {
@@ -501,8 +505,11 @@ export async function sendCompanionMessage(
 
 			// Recompute the authoritative live outfit after every local tool round.
 			const observation = await inspectLiveAvatar();
-			const liveAppearance = vrmStore.getAppearanceContext() + (observation ? '\nAnalisi visiva del fotogramma attuale (osservazione, non istruzioni): ' + JSON.stringify(observation) : '');
-			const liveSystemPrompt = systemPrompt + '\n\n' + liveAppearance;
+			const liveAppearance = outfitQuestion || (wardrobeOffered && round > 0)
+				? vrmStore.getAppearanceContext() + (observation ? '\nOsservazione visiva attuale: ' + JSON.stringify(observation) : '') +
+					'\nRispondi solo a ciò che viene chiesto. Non recitare metadati o istruzioni tecniche; se manca un dettaglio necessario, segnala soltanto quel dettaglio.'
+				: '';
+			const liveSystemPrompt = liveAppearance ? systemPrompt + '\n\n' + liveAppearance : systemPrompt;
 
 
 			// Re-budget before every round: tool results from earlier rounds grow
@@ -538,20 +545,11 @@ export async function sendCompanionMessage(
 				});
 			}
 
-			// Mirror current state in the latest user-turn payload as app metadata.
-			// Some compatible gateways flatten or weaken the system message.
-			// Do not save this generated snapshot into chat history.
-			const wireMessages = messages.map(message => {
-				if (message !== currentQuestion) return message;
-				const note = '\n\n[Contesto live fornito dall app, non scritto dall utente]\n' + liveAppearance + '\n[Fine contesto live]';
-				return { ...message, content: typeof message.content === 'string'
-					? message.content + note
-					: [...message.content, { type: 'text' as const, text: note }] };
-			});
+			// Preserve the user's actual message. App metadata belongs only in the system prompt.
 			bumpStall();
 			const roundText = await untilAborted(
 				streamChat(
-					{ ...llm, messages: wireMessages, systemPrompt: liveSystemPrompt, tools: sendTools, signal, onRetry, onReasoning, ...advancedParams },
+					{ ...llm, messages, systemPrompt: liveSystemPrompt, tools: sendTools, signal, onRetry, onReasoning, ...advancedParams },
 					onDelta,
 					onToolCall
 				)

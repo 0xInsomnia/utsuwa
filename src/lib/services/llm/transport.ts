@@ -278,6 +278,7 @@ async function streamDirect(
 			: JSON.stringify({
 					model,
 					messages: messagesWithSystem.map(toWireMessage),
+					...(isVeniceApi(providerBaseURL) && { venice_parameters: { include_venice_system_prompt: false } }),
 					stream: true,
 					...(options.temperature !== undefined && { temperature: options.temperature }),
 					...(options.maxTokens !== undefined && { max_tokens: options.maxTokens }),
@@ -416,7 +417,7 @@ function processStreamLine(
 // Non-streaming, forced-JSON call straight to the provider.
 async function requestJsonDirect(request: JsonRequest): Promise<string | null> {
 	const { provider, model, apiKey, baseURL, system, user, maxTokens, signal } = request;
-	const { url, headers } = providerEndpoint(provider, apiKey, baseURL);
+	const { base, url, headers } = providerEndpoint(provider, apiKey, baseURL);
 	const body =
 		provider === 'anthropic'
 			? JSON.stringify({
@@ -432,6 +433,7 @@ async function requestJsonDirect(request: JsonRequest): Promise<string | null> {
 						{ role: 'user', content: user }
 					],
 					response_format: { type: 'json_object' },
+					...(isVeniceApi(base) && { venice_parameters: { include_venice_system_prompt: false } }),
 					stream: false,
 					max_tokens: maxTokens
 				});
