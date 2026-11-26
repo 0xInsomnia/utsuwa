@@ -2,18 +2,18 @@
 	import { onMount } from 'svelte';
 	import { Icon } from '$lib/components/ui';
 	import { pop, fadeFast } from '$lib/utils/motion';
-	import { isTauri } from '$lib/services/platform/platform';
+	import { isDesktopTauri } from '$lib/services/platform/platform';
 	import { updaterStore } from '$lib/stores/updater.svelte';
 
 	// Quiet check on launch — only surfaces if an update is actually waiting.
 	onMount(() => {
-		if (isTauri()) updaterStore.check({ silent: true });
+		if (isDesktopTauri()) updaterStore.check({ silent: true });
 	});
 
 	const status = $derived(updaterStore.status);
 
 	const visible = $derived(
-		isTauri() &&
+		isDesktopTauri() &&
 			!updaterStore.dismissed &&
 			(status === 'available' ||
 				status === 'downloading' ||

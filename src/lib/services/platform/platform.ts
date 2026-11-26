@@ -17,3 +17,12 @@ export function isTauri(): boolean {
 export function isDesktopBuild(): boolean {
 	return typeof __IS_DESKTOP__ !== 'undefined' && __IS_DESKTOP__;
 }
+
+/** Mobile Tauri still uses native provider HTTP, but not desktop window APIs. */
+export function isNativeMobile(): boolean {
+	return isTauri() && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+export function isDesktopTauri(): boolean {
+	return isTauri() && !isNativeMobile();
+}

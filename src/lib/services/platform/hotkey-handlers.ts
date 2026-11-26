@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { isTauri } from './platform';
+import { isDesktopTauri } from './platform';
 import { registerHotkey, DEFAULT_HOTKEYS, type HotkeyConfig } from './hotkeys';
 
 // Event bus for hotkey actions (allows components to subscribe)
@@ -34,7 +34,7 @@ let isPTTActive = false;
  * Initialize all global hotkeys (Tauri only)
  */
 export async function initializeHotkeys(config?: Partial<HotkeyConfig>): Promise<void> {
-	if (!browser || !isTauri()) return;
+	if (!browser || !isDesktopTauri()) return;
 
 	const hotkeys = { ...DEFAULT_HOTKEYS, ...config };
 

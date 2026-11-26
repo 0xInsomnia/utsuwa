@@ -4,7 +4,7 @@
 	import CameraSettingsPanel from '$lib/components/ui/CameraSettingsPanel.svelte';
 	import ArUnsupportedModal from '$lib/components/ui/ArUnsupportedModal.svelte';
 	import { localPath } from '$lib/config/links';
-	import { isTauri } from '$lib/services/platform';
+	import { isDesktopTauri } from '$lib/services/platform/platform';
 	import { arStore } from '$lib/stores/ar.svelte';
 	import { getColorMode, cycleColorMode, type ColorMode } from '$lib/utils/color-mode';
 	import { onMount } from 'svelte';
@@ -64,7 +64,7 @@
 	);
 
 	onMount(() => {
-		showOverlayBtn = isTauri();
+		showOverlayBtn = isDesktopTauri();
 		colorMode = getColorMode();
 
 		// Close dropdowns when clicking anywhere outside the root element
