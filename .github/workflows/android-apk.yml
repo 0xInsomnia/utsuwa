@@ -40,6 +40,13 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Expose Tauri CLI to Gradle
+        shell: bash
+        run: |
+          echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$GITHUB_WORKSPACE/node_modules/.bin:$PATH"
+          cd src-tauri
+          pnpm exec tauri --version
       - name: Initialize Android project
         run: pnpm exec tauri android init --ci --skip-targets-install
       - name: Build ARM64 debug APK
