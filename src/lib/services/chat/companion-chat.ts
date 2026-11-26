@@ -151,6 +151,33 @@ function parseDirectWardrobe(text: string): { visible: boolean; label: string } 
 	return { visible, label: /^(?:tutto|tutti|tutte|vestiti|abiti|abbigliamento|i vestiti|tutti i vestiti)$/.test(label) ? '' : label };
 }
 
+// Serialize best-effort local acknowledgements without holding the chat lock.
+// The visible confirmation is authoritative even if IndexedDB or TTS fails.
+let wardrobeMemoryQueue: Promise<void> = Promise.resolve();
+function persistWardrobeReply(user: string, reply: string) {
+	wardrobeMemoryQueue = wardrobeMemoryQueue.then(async () => {
+		await recordTurn({ role: 'user', content: user });
+		await recordTurn({ role: 'assistant', content: reply });
+	}).catch(error => console.debug('[Wardrobe] Memory save failed:', error));
+}
+
+function speakWardrobeReply(reply: string) {
+	// Run after the current turn has released its loading flag. Do not await
+	// speech playback or allow a TTS failure to bounce back an executed action.
+	setTimeout(() => {
+		try {
+			const speech = modulesStore.getModuleSettings('speech');
+			const provider = speech.activeProvider as TTSProvider;
+			if (modulesStore.getModuleState('speech')?.enabled) {
+				void ttsStore.speak(reply, buildTTSOptions(speech, provider, settingsStore.getProviderConfig(provider), getTTSProvider(provider)))
+					.catch(error => console.debug('[Wardrobe] TTS failed:', error));
+			}
+		} catch (error) {
+			console.debug('[Wardrobe] TTS setup failed:', error);
+		}
+	}, 0);
+}
+
 let activeTurn: AbortController | null = null;
 
 /** Stop the reply in flight, if any. */
@@ -221,11 +248,6 @@ export async function sendCompanionMessage(
 	}
 
 	try {
-		const consciousnessSettings = modulesStore.getModuleSettings('consciousness');
-		const llm = resolveActiveLLM();
-		if (!llm) throw new Error(missingLLMMessage());
-		const { provider } = llm;
-
 		const directWardrobe = !systemEvent && images.length === 0 ? parseDirectWardrobe(content) : null;
 		if (directWardrobe) {
 			const targets = vrmStore.getWardrobeTargets();
@@ -258,25 +280,33 @@ export async function sendCompanionMessage(
 					const verified = matches.every(part => after.some(item => item.id === part.id && item.visible === directWardrobe.visible));
 					reply = !verified
 						? 'Non sono riuscita a completare il cambio di ' + matches[0].label + '. Controlla la mesh nel pannello.'
-						: (before.length ? 'Cambio eseguito: ' : 'Era già così: ') + matches[0].label + (directWardrobe.visible ? ' — visibile.' : ' — nascosto.');
+						: before.length
+							? (directWardrobe.visible ? 'Fatto, ho rimesso: ' : 'Fatto, ho tolto: ') + matches[0].label + '.'
+							: (directWardrobe.visible ? 'Lo indosso già: ' : 'Non lo indosso già: ') + matches[0].label + '.';
 				}
 			}
+			// Publish a complete reply through the same message lifecycle as a
+			// normal chat response. No network request is needed to acknowledge
+			// an already verified local action.
+			finishedReply = reply;
 			vrmStore.setWardrobeActionStatus(reply);
-			chatStore.addMessage('assistant', reply);
+			chatStore.addMessage('assistant', '');
+			chatStore.updateLastMessage(reply);
+			hooks.setLatestResponse(reply);
 			hooks.setTyping(false);
 			vrmStore.setThinking(false);
-			hooks.setLatestResponse(reply);
+			hooks.setPhase?.('thinking');
 			vrmStore.startTalking(reply);
-			const speech = modulesStore.getModuleSettings('speech');
-			const speechProvider = speech.activeProvider as TTSProvider;
-			if (modulesStore.getModuleState('speech')?.enabled) {
-				ttsStore.speak(reply, buildTTSOptions(speech, speechProvider, settingsStore.getProviderConfig(speechProvider), getTTSProvider(speechProvider)));
-			}
-			await recordTurn({ role: 'user', content });
-			await recordTurn({ role: 'assistant', content: reply });
+			speakWardrobeReply(reply);
+			// Schedule persistence outside the critical UI path, after finally.
+			setTimeout(() => persistWardrobeReply(content, reply), 0);
 			return;
 		}
 
+		const consciousnessSettings = modulesStore.getModuleSettings('consciousness');
+		const llm = resolveActiveLLM();
+		if (!llm) throw new Error(missingLLMMessage());
+		const { provider } = llm;
 		const contextSize = consciousnessSettings.contextSize || undefined;
 		// Only inspect the live avatar for relevant turns, never every frame.
 		const outfitQuestion = /\b(indoss\w*|vest\w*|abiti|abbigliamento|look|outfit|clothes|clothing|wear\w*|wardrobe|giacca|gonna|pantaloni|maglietta|camicia|scarpe|cappello|accessori|colore|toglit\w*|rimett\w*|cambiati|caldo|freddo)\b/i.test(content);
@@ -658,9 +688,13 @@ export async function sendCompanionMessage(
 		hooks.setTyping(false);
 		vrmStore.setThinking(false);
 	} finally {
-		if (retryHint && chatHintStore.hint === retryHint) chatHintStore.clearHint();
+		// All exit paths (local actions, failed provider calls and cancellation)
+		// must release the input, even if a presentation hook throws.
 		guard.dispose();
 		chatStore.setLoading(false);
+		vrmStore.setThinking(false);
+		hooks.setTyping(false);
+		if (retryHint && chatHintStore.hint === retryHint) chatHintStore.clearHint();
 	}
 }
 
