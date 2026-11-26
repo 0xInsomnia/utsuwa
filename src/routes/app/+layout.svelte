@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { onNavigate } from '$app/navigation';
 	import UpdateBanner from '$lib/components/updater/UpdateBanner.svelte';
+	import AndroidUpdateBanner from '$lib/components/updater/AndroidUpdateBanner.svelte';
 
 	let { children } = $props();
 	let viewportHeight = $state<number>();
@@ -49,6 +50,7 @@
 	<ScreenWakeLock />
 	{@render children()}
 	<UpdateBanner />
+	<AndroidUpdateBanner />
 </div>
 
 <style>

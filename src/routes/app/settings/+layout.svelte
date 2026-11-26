@@ -6,6 +6,7 @@
 	import { Icon } from '$lib/components/ui';
 	import { localPath } from '$lib/config/links';
 	import { mcpStore } from '$lib/stores/mcp.svelte';
+	import { isNativeMobile } from '$lib/services/platform/platform';
 
 	let { children } = $props();
 	let query = $state('');
@@ -20,6 +21,7 @@
 		...(mcpStore.capability === 'none' ? [] : [{ href: localPath('app', '/settings/mcp'), label: 'MCP', icon: 'modules', keywords: 'servers tools integrations' }]),
 		{ href: localPath('app', '/settings/memory'), label: 'Memory', icon: 'brain', keywords: 'facts relationship memories graph' },
 		{ href: localPath('app', '/settings/data'), label: 'Data', icon: 'database', keywords: 'export import backup save' },
+		...(isNativeMobile() ? [{ href: localPath('app', '/settings/updates'), label: 'Aggiornamenti', icon: 'download', keywords: 'android apk update versione aggiornamento' }] : []),
 		{ href: localPath('app', '/settings/developer'), label: 'Developer', icon: 'code', keywords: 'debug logs reset diagnostics' }
 	]);
 	const filteredItems = $derived(navItems.filter(item => `${item.label} ${item.keywords}`.toLowerCase().includes(query.trim().toLowerCase())));
