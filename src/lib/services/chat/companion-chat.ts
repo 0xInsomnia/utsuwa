@@ -111,7 +111,8 @@ async function buildCompanionPrompt(
 		ttsToolCalling: shouldUseSpeechTools(llmProvider, speechEnabled, speechSettings),
 		avatarActions: toPromptActions(animationLibraryStore.enabledForLlm)
 	};
-	return buildSystemPrompt(context);
+	const appearance = vrmStore.getAppearanceContext();
+	return buildSystemPrompt(context) + (appearance ? '\n\n' + appearance : '');
 }
 
 /**

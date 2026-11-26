@@ -274,6 +274,7 @@
 		<!-- Speech Bubble (shows latest response, click to dismiss) -->
 			{#if showBubble && (latestResponse || (isTyping && typingDotsVisible))}
 			<SpeechBubble
+				stable={true}
 				message={latestResponse}
 				isTyping={isTyping && typingDotsVisible}
 				phase={thinkingPhase}

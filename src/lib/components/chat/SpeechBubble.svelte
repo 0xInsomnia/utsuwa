@@ -13,9 +13,11 @@
 		/** Docked dialog mode: the window moves around in overlay mode, so the
 		 *  bubble anchors above the bottom controls instead of chasing the head */
 		docked?: boolean;
+		/** Main immersive chat: anchor to the app viewport, not the animated head. */
+		stable?: boolean;
 	}
 
-	let { message, isTyping = false, phase = 'thinking', onHide, docked = false }: Props = $props();
+	let { message, isTyping = false, phase = 'thinking', onHide, docked = false, stable = false }: Props = $props();
 
 	const revealSpeedMs = $derived(REVEAL_SPEED_MS[displayStore.textRevealSpeed]);
 
@@ -25,7 +27,7 @@
 	// Calculate bubble position (offset to the right of head)
 	// Typing indicator appears closer to model, message bubble has more offset
 	const bubbleStyle = $derived(() => {
-		if (docked) return '';
+		if (docked || stable) return '';
 		if (!screenPos) {
 			// Fallback to fixed position if no tracking available
 			return isTyping ? 'top: 25%; right: 25%;' : 'top: 22%; right: 15%;';
@@ -63,7 +65,8 @@
 	<div
 		class="speech-bubble-container"
 		class:docked
-		transition:pop={{ duration: 220, y: 6, base: docked ? 'translateX(-50%)' : '' }}
+		class:stable
+		transition:pop={{ duration: 220, y: 6, base: docked || stable ? 'translateX(-50%)' : '' }}
 		role="status"
 		aria-live="polite"
 		style={bubbleStyle()}
@@ -83,7 +86,7 @@
 					{/if}
 				</div>
 			{/key}
-			<div class="bubble-tail" class:bubble-tail-down={docked}></div>
+			<div class="bubble-tail" class:bubble-tail-down={docked || stable}></div>
 		</div>
 	</div>
 {/if}
@@ -169,6 +172,35 @@
 		border-left: 8px solid transparent;
 		border-right: 8px solid transparent;
 		border-bottom: none;
+	}
+
+	/* Stable immersive mode: keep one fixed footprint while the avatar moves.
+	   Absolute positioning uses the visual-viewport-sized app container. */
+	.speech-bubble-container.stable {
+		position: absolute;
+		left: 50%;
+		right: auto;
+		top: auto;
+		bottom: 6.5rem;
+		transform: translateX(-50%);
+		width: min(86%, 340px);
+		transition: none;
+	}
+	.stable .speech-bubble {
+		width: 100%;
+		max-width: none;
+		max-height: 150px;
+	}
+	.stable .speech-bubble-content {
+		max-height: 150px;
+	}
+	.stable .speech-bubble:hover {
+		transform: none;
+	}
+	@media (max-width: 640px) {
+		.speech-bubble-container.stable { bottom: 4.5rem; }
+		.stable .speech-bubble,
+		.stable .speech-bubble-content { max-height: min(150px, 30dvh); }
 	}
 
 	.message {

@@ -59,12 +59,14 @@
 		avatarParts = avatarParts.map(part => {
 			if (part.id !== id) return part;
 			part.mesh.visible = !part.visible;
+			vrmStore.recordAppearanceChange(part.label, part.mesh.visible);
 			return { ...part, visible: part.mesh.visible };
 		});
 	}
 
 	function restoreParts() {
 		avatarParts = avatarParts.map(part => {
+			if (part.mesh.visible !== part.initial) vrmStore.recordAppearanceChange(part.label, part.initial);
 			part.mesh.visible = part.initial;
 			return { ...part, visible: part.initial };
 		});
@@ -309,7 +311,7 @@
 					<strong>Vestiti e accessori</strong>
 					<button class="btn btn-secondary btn-icon" aria-label="Chiudi pannello" onclick={() => (showParts = false)}><Icon name="x" size={16} /></button>
 				</div>
-				<p class="parts-note">Mostra o nascondi gli elementi separati del modello.</p>
+				<p class="parts-note">Mostra o nascondi gli elementi separati del modello. I nomi e la visibilità vengono comunicati all’AI durante la prossima conversazione.</p>
 				<input class="parts-search" aria-label="Cerca elemento" placeholder="Cerca mesh o materiale..." bind:value={partSearch} />
 				<button class="btn btn-secondary parts-reset" onclick={restoreParts} disabled={avatarParts.length === 0}>Ripristina originale</button>
 				<div class="parts-list">
