@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import { vrmGalleryStore } from '$lib/stores/vrm-gallery.svelte';
 	import VrmUploader from '$lib/components/vrm/VrmUploader.svelte';
@@ -24,8 +25,8 @@
 
 <div class="ob-step">
 	<div class="ob-head">
-		<h2 class="ob-title">Choose your avatar</h2>
-		<p class="ob-subtitle">Select a VRM model or upload your own.</p>
+		<h2 class="ob-title">{m.app_onboarding_avatar_title()}</h2>
+		<p class="ob-subtitle">{m.app_onboarding_avatar_subtitle()}</p>
 	</div>
 
 	<div class="gallery">
@@ -49,7 +50,7 @@
 				</div>
 				<span class="model-name">{model.name}</span>
 				{#if model.isDefault}
-					<span class="default-badge">Default</span>
+					<span class="default-badge">{m.app_onboarding_avatar_default()}</span>
 				{/if}
 			</button>
 		{/each}
@@ -58,7 +59,7 @@
 			<div class="upload-icon">
 				<Icon name="upload" size={24} />
 			</div>
-			<span class="upload-text">Upload VRM</span>
+			<span class="upload-text">{m.app_onboarding_avatar_upload()}</span>
 		</button>
 	</div>
 
@@ -70,7 +71,7 @@
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="uploader-container" onclick={(e) => e.stopPropagation()}>
 				<div class="uploader-header">
-					<h3>Upload VRM model</h3>
+					<h3>{m.app_onboarding_avatar_upload_title()}</h3>
 					<button class="close-btn" onclick={() => showUploader = false}>
 						<Icon name="x" size={18} />
 					</button>
@@ -83,10 +84,10 @@
 	<div class="ob-actions ob-actions--split">
 		<button class="btn btn-secondary" onclick={onBack}>
 			<Icon name="chevron-left" size={16} />
-			Back
+			{m.app_common_back()}
 		</button>
 		<button class="btn btn-primary" onclick={onNext}>
-			Next
+			{m.app_common_next()}
 			<Icon name="chevron-right" size={16} />
 		</button>
 	</div>

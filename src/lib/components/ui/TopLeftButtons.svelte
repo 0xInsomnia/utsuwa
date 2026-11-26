@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import { photomodeStore } from '$lib/stores/photomode.svelte';
 
@@ -11,16 +12,16 @@
 </script>
 
 <div class="top-left-buttons">
-	<button class="btn btn-secondary btn-icon" onclick={() => photomodeStore.enter()} aria-label="Open photo mode">
+	<button class="btn btn-secondary btn-icon" onclick={() => photomodeStore.enter()} aria-label={m.app_controls_photo_mode()}>
 		<Icon name="camera" size={16} />
 	</button>
 	{#if onOpenMemoryGraph}
-		<button class="btn btn-secondary btn-icon" onclick={onOpenMemoryGraph} aria-label="Open memory graph">
+		<button class="btn btn-secondary btn-icon" onclick={onOpenMemoryGraph} aria-label={m.app_controls_memory_graph()}>
 			<Icon name="brain" size={16} />
 		</button>
 	{/if}
 	{#if onBoardClick}
-		<button class="btn btn-secondary btn-icon" onclick={(event) => { event.currentTarget.focus(); onBoardClick?.(); }} aria-label="Photoboard" title="Things you've shown her">
+		<button class="btn btn-secondary btn-icon" onclick={(event) => { event.currentTarget.focus(); onBoardClick?.(); }} aria-label={m.app_board_title()} title={m.app_controls_board_title()}>
 			<Icon name="image" size={16} />
 		</button>
 	{/if}

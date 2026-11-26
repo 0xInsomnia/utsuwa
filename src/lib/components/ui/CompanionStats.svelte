@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Popover } from 'bits-ui';
 	import Icon from './Icon.svelte';
 	import CompanionStateSummary from './CompanionStateSummary.svelte';
@@ -20,13 +21,13 @@
 </script>
 
 <Popover.Root bind:open>
-	<Popover.Trigger bind:ref={trigger} class="companion-stats-trigger" aria-label="Companion stats" title="Companion stats">
+	<Popover.Trigger bind:ref={trigger} class="companion-stats-trigger" aria-label={m.app_stats_companion()} title={m.app_stats_companion()}>
 		<span class="mood-icon" style:color={mood.color}><Icon name={mood.icon} size={15} /></span>
 		<span class="trigger-name">{characterStore.state.name}</span>
 		<Icon name={open ? 'chevron-down' : 'chevron-up'} size={12} />
 	</Popover.Trigger>
 	<Popover.Portal>
-		<Popover.Content class="companion-stats-popover" role="dialog" aria-label="Companion stats"
+		<Popover.Content class="companion-stats-popover" role="dialog" aria-label={m.app_stats_companion()}
 			side="top" align="start" sideOffset={10} collisionPadding={12} bind:ref={content}
 			onEscapeKeydown={() => (restoreTriggerFocus = true)}
 			onCloseAutoFocus={(event) => {
@@ -34,14 +35,14 @@
 			}}
 			onOpenAutoFocus={(event) => { event.preventDefault(); content?.focus(); }}>
 			<header class="stats-header">
-				<div><h3>{characterStore.state.name}</h3><p>Companion state</p></div>
-				<Popover.Close class="stats-close" aria-label="Close companion stats"><Icon name="x" size={16} /></Popover.Close>
+				<div><h3>{characterStore.state.name}</h3><p>{m.app_stats_companion_state()}</p></div>
+				<Popover.Close class="stats-close" aria-label={m.app_stats_close()}><Icon name="x" size={16} /></Popover.Close>
 			</header>
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex (This region must scroll with a keyboard on short screens.) -->
-			<div class="stats-body" tabindex="0" role="region" aria-label="Stats details"><CompanionStateSummary /></div>
+			<div class="stats-body" tabindex="0" role="region" aria-label={m.app_stats_details()}><CompanionStateSummary /></div>
 			<footer><a href={localPath('app', '/settings/persona?view=state')}
 				onclick={(event) => { open = false; if (onOpenSettings) { event.preventDefault(); onOpenSettings(); } }}>
-				Character settings <Icon name="arrow-right" size={14} />
+				{m.app_stats_character_settings()} <Icon name="arrow-right" size={14} />
 			</a></footer>
 		</Popover.Content>
 	</Popover.Portal>

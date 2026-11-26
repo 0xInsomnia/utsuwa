@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { onDestroy } from 'svelte';
 	import Button from './Button.svelte';
 	import Icon from './Icon.svelte';
 
-	let { text, label = 'Copy' }: { text: string; label?: string } = $props();
+	let { text, label = m.app_common_copy() }: { text: string; label?: string } = $props();
 	let status = $state<'idle' | 'copying' | 'copied' | 'error'>('idle');
 	let resetTimer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
@@ -35,15 +36,15 @@
 		onclick={copy}
 		disabled={status === 'copying'}
 		aria-label={label}
-		title={status === 'copied' ? 'Copied' : label}
+		title={status === 'copied' ? m.app_common_copied() : label}
 	>
 		<Icon name={status === 'copied' ? 'check' : 'copy'} size={13} />
 	</Button>
 	<span class:copy-error={status === 'error'} class:sr-only={status !== 'error'} role="status">
 		{status === 'error'
-			? 'Could not copy. Select the message text to copy it manually.'
+			? m.app_common_copy_failed()
 			: status === 'copied'
-				? 'Copied to clipboard.'
+				? m.app_common_copied_clipboard()
 				: ''}
 	</span>
 </div>

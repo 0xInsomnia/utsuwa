@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import { Icon } from '$lib/components/ui';
 	import CameraSettingsPanel from '$lib/components/ui/CameraSettingsPanel.svelte';
@@ -60,7 +61,7 @@
 		colorMode === 'system' ? 'monitor' : colorMode === 'light' ? 'sun' : 'moon'
 	);
 	const themeLabel = $derived(
-		colorMode === 'system' ? 'Theme: System' : colorMode === 'light' ? 'Theme: Light' : 'Theme: Dark'
+		colorMode === 'system' ? m.app_controls_theme_system() : colorMode === 'light' ? m.app_controls_theme_light() : m.app_controls_theme_dark()
 	);
 
 	onMount(() => {
@@ -80,7 +81,7 @@
 			if (event.target instanceof Element && event.target.closest('[role="dialog"]:not(.camera-panel)')) return;
 			let target: string;
 			if (showParts) { showParts = false; target = '[aria-label="Elementi modello"]'; }
-			else if (showCamera) { showCamera = false; target = '[aria-label="Camera settings"]'; }
+			else if (showCamera) { showCamera = false; target = '[data-camera-trigger]'; }
 			else if (remindersOpen) { remindersOpen = false; target = '.reminder-trigger'; }
 			else if (clusterOpen) { clusterOpen = false; target = '.cluster-trigger'; }
 			else return;
@@ -105,9 +106,9 @@
 		const now = new Date();
 		const diffMs = date.getTime() - now.getTime();
 		const diffMin = Math.max(0, Math.ceil(diffMs / 60000));
-		if (diffMin < 60) return `in ${diffMin} min`;
+		if (diffMin < 60) return m.app_reminders_in_minutes({ minutes: diffMin });
 		const diffH = Math.ceil(diffMin / 60);
-		return `in ${diffH} h`;
+		return m.app_reminders_in_hours({ hours: diffH });
 	}
 
 	function deleteReminder(id?: number) {
@@ -143,8 +144,8 @@
 				class="btn btn-secondary btn-icon reminder-trigger"
 				aria-expanded={remindersOpen}
 				onclick={() => (remindersOpen = !remindersOpen)}
-				aria-label={upcomingReminders.length > 0 ? `Open reminders, ${upcomingReminders.length} open` : 'Open reminders'}
-				title="Open reminders"
+				aria-label={upcomingReminders.length > 0 ? m.app_reminders_open_count({ count: upcomingReminders.length }) : m.app_reminders_open()}
+				title={m.app_reminders_open()}
 			>
 				<Icon name="bell" size={16} />
 				{#if upcomingReminders.length > 0}
@@ -153,9 +154,9 @@
 			</button>
 			{#if remindersOpen}
 				<div class="reminder-dropdown">
-					<div class="reminder-header">Open tasks</div>
+					<div class="reminder-header">{m.app_reminders_open_tasks()}</div>
 					{#if upcomingReminders.length === 0}
-						<div class="reminder-empty">No open tasks or timers</div>
+						<div class="reminder-empty">{m.app_reminders_empty()}</div>
 					{:else}
 						<ul class="reminder-list">
 							{#each upcomingReminders as reminder (reminder.id)}
@@ -167,8 +168,8 @@
 									<button
 										class="reminder-delete"
 										onclick={() => deleteReminder(reminder.id)}
-										aria-label="Delete reminder"
-										title="Delete reminder"
+										aria-label={m.app_reminders_delete()}
+										title={m.app_reminders_delete()}
 									>
 										<Icon name="trash" size={14} />
 									</button>
@@ -178,7 +179,7 @@
 					{/if}
 
 					{#if recentFired.length > 0}
-						<div class="reminder-header reminder-header--fired">Fired or missed</div>
+						<div class="reminder-header reminder-header--fired">{m.app_reminders_fired()}</div>
 						<ul class="reminder-list">
 							{#each recentFired as reminder (reminder.id)}
 								<li class="reminder-item reminder-item--fired">
@@ -189,8 +190,8 @@
 									<button
 										class="reminder-delete"
 										onclick={() => dismissRecentFired(reminder.id)}
-										aria-label="Dismiss reminder"
-										title="Dismiss reminder"
+										aria-label={m.app_reminders_dismiss()}
+										title={m.app_reminders_dismiss()}
 									>
 										<Icon name="check" size={14} />
 									</button>
@@ -202,19 +203,19 @@
 			{/if}
 		</div>
 		{#if showOverlayBtn}
-			<button class="btn btn-primary btn-icon" onclick={launchOverlay} aria-label="Launch overlay" title="Launch Overlay Mode">
+			<button class="btn btn-primary btn-icon" onclick={launchOverlay} aria-label={m.app_controls_overlay()} title={m.app_controls_overlay_title()}>
 				<Icon name="monitor" size={16} />
 			</button>
 		{/if}
-		<button class="btn btn-secondary btn-icon" onclick={(event) => { event.currentTarget.focus(); onInfoClick(); }} aria-label="App info">
+		<button class="btn btn-secondary btn-icon" onclick={(event) => { event.currentTarget.focus(); onInfoClick(); }} aria-label={m.app_controls_info()}>
 			<Icon name="info" size={16} />
 		</button>
 		<button
 			class="btn btn-secondary btn-icon cluster-trigger"
 			onclick={toggleCluster}
-			aria-label="Controls"
+			aria-label={m.app_controls_controls()}
 			aria-expanded={clusterOpen}
-			title="Controls"
+			title={m.app_controls_controls()}
 		>
 			<Icon name={clusterOpen ? 'x' : 'sliders'} size={16} />
 		</button>
@@ -226,8 +227,8 @@
 				class="btn btn-secondary btn-icon cluster-item"
 				style="--i: 0"
 				onclick={() => goto(localPath('app', '/settings'))}
-				aria-label="Settings"
-				title="Settings"
+				aria-label={m.app_controls_settings()}
+				title={m.app_controls_settings()}
 			>
 				<Icon name="settings" size={16} />
 			</button>
@@ -236,8 +237,9 @@
 				aria-expanded={showCamera}
 				style="--i: 1"
 				onclick={() => { showCamera = !showCamera; showParts = false; }}
-				aria-label="Camera settings"
-				title="Camera"
+				data-camera-trigger
+				aria-label={m.app_controls_camera_settings()}
+				title={m.app_controls_camera()}
 			>
 				<Icon name="video" size={16} />
 			</button>
@@ -255,8 +257,8 @@
 				aria-pressed={arStore.active}
 				style="--i: 3"
 				onclick={handleArClick}
-				aria-label={arStore.active ? 'Exit AR' : 'Enter AR'}
-				title={arStore.active ? 'Exit AR' : 'View in AR'}
+				aria-label={arStore.active ? m.app_controls_ar_exit() : m.app_controls_ar_enter()}
+				title={arStore.active ? m.app_controls_ar_exit() : m.app_controls_ar_view()}
 			>
 				<Icon name="cube" size={16} />
 			</button>

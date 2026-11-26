@@ -1,3 +1,4 @@
+import { m } from '$lib/paraglide/messages';
 import { prepareImage, UnsupportedImageError } from '$lib/services/storage/keepsakes';
 import { chatDraftStore } from '$lib/stores/chat-draft.svelte';
 import { chatHintStore } from '$lib/stores/chat-hint.svelte';
@@ -19,7 +20,7 @@ export function imageMimeFromPath(path: string): string | null {
 
 export function showVisionHint() {
 	chatHintStore.showHint(
-		"This model can't see images. If it can, switch on Can see images in Settings > LLM Model. Otherwise pick a vision model or turn on a separate one there."
+		m.app_chat_vision_hint()
 	);
 }
 
@@ -43,8 +44,8 @@ export async function queueFiles(files: FileList | File[] | null, visionCapable:
 		} catch (e) {
 			chatHintStore.showHint(
 				e instanceof UnsupportedImageError
-					? "That image format isn't supported. Try a JPEG, PNG, GIF or WebP (iPhone HEIC photos won't work)."
-					: "Couldn't read that image. Try a different one."
+					? m.app_chat_image_unsupported()
+					: m.app_chat_image_unreadable()
 			);
 		}
 	}

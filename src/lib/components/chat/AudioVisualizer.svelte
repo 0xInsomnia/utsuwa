@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	interface Props {
 		audioLevel: number;
 		transcript: string;
@@ -30,7 +31,7 @@
 		{/each}
 	</div>
 	<span class="transcript" class:placeholder={!transcript}>
-		{transcript || 'Listening...'}
+		{transcript || m.app_chat_listening()}
 	</span>
 </div>
 

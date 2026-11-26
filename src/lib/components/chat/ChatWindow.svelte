@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { browser } from '$app/environment';
 	import { chatStore } from '$lib/stores/chat.svelte';
 	import { displayStore, REVEAL_SPEED_MS } from '$lib/stores/display.svelte';
 	import { Icon, ShimmerLabel } from '$lib/components/ui';
 	import { renderMarkdown } from './render-markdown';
 	import { wrapWordsInHtml } from './reveal-markup';
-	import { phaseLabel, type ThinkingPhase } from '$lib/services/chat/chat-phase';
+	import { type ThinkingPhase } from '$lib/services/chat/chat-phase';
+	import { phaseText } from '$lib/i18n/labels';
 	import { type PreparedImage } from '$lib/services/storage/keepsakes';
 	import { chatDraftStore } from '$lib/stores/chat-draft.svelte';
 	import ChatInput from './ChatInput.svelte';
@@ -66,7 +68,7 @@
 
 	function handleClearHistory() {
 		if (!browser) return;
-		if (confirm('Delete all messages in this chat?')) {
+		if (confirm(m.app_chat_clear_confirm())) {
 			chatStore.clearMessages();
 		}
 	}
@@ -76,18 +78,18 @@
 	class="chat-window docked"
 	inert={!open}
 	aria-hidden={!open}
-	aria-label="Chat window"
+	aria-label={m.app_chat_window()}
 	role="region"
 	class:open
 	class:pin-left={displayStore.sidebarPosition === 'left'}
 >
 	<div class="window-header">
-		<span class="chat-title">Conversation</span>
+		<span class="chat-title">{m.app_chat_title()}</span>
 		<button
 			class="clear-btn"
 			onclick={handleClearHistory}
-			aria-label="Clear chat history"
-			title="Clear chat history"
+			aria-label={m.app_chat_clear()}
+			title={m.app_chat_clear()}
 			disabled={visibleMessages.length === 0}
 		>
 			<Icon name="trash" size={14} />
@@ -96,7 +98,7 @@
 
 	<div class="messages" bind:this={messagesEl}>
 		{#if visibleMessages.length === 0 && !isTyping}
-			<p class="empty-hint">No messages yet.</p>
+			<p class="empty-hint">{m.app_chat_empty()}</p>
 		{:else}
 			{#each visibleMessages as msg (msg.id)}
 				{@const isLastAssistant = msg.id === lastAssistantId}
@@ -118,14 +120,14 @@
 								<p>{@html renderMarkdown(msg.content)}</p>
 							{/if}
 						</div>
-						{#if msg.content}<CopyButton text={msg.content} label="Copy message" />{/if}
+						{#if msg.content}<CopyButton text={msg.content} label={m.app_chat_copy()} />{/if}
 					</div>
 				{/if}
 			{/each}
 			{#if isTyping}
 				<div class="message assistant">
 					<div class="bubble thinking">
-						<ShimmerLabel label={phaseLabel(phase)} />
+						<ShimmerLabel label={phaseText(phase)} />
 					</div>
 				</div>
 			{/if}
@@ -139,7 +141,7 @@
 	{#if open && chatDraftStore.dropActive}
 		<div class="drop-overlay">
 			<Icon name="camera" size={22} />
-			<span>Drop a photo to show her</span>
+			<span>{m.app_chat_drop_photo()}</span>
 		</div>
 	{/if}
 </div>

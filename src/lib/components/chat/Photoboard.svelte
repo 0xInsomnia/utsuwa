@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { onMount, onDestroy } from 'svelte';
 	import { Icon } from '$lib/components/ui';
 	import { Dialog } from 'bits-ui';
+	import { dateLocaleTag } from '$lib/i18n/labels';
 	import {
 		listKeepsakes,
 		getKeepsakeImageUrl,
@@ -72,8 +74,8 @@
 
 	function groupLabel(ms: number): string {
 		const week = 7 * 24 * 60 * 60 * 1000;
-		if (Date.now() - ms < week) return 'This week';
-		return new Date(ms).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+		if (Date.now() - ms < week) return m.app_board_this_week();
+		return new Date(ms).toLocaleDateString(dateLocaleTag(), { month: 'long', year: 'numeric' });
 	}
 
 	const sections = $derived.by(() => {
@@ -89,10 +91,10 @@
 	});
 
 	function shortDate(ms: number): string {
-		return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+		return new Date(ms).toLocaleDateString(dateLocaleTag(), { month: 'short', day: 'numeric' });
 	}
 	function fullDate(ms: number): string {
-		return new Date(ms).toLocaleDateString('en-US', {
+		return new Date(ms).toLocaleDateString(dateLocaleTag(), {
 			weekday: 'long',
 			month: 'long',
 			day: 'numeric',
@@ -127,24 +129,24 @@
  <Dialog.Content>
  {#snippet child({ props })}
  <div {...props} class="board ui-dialog">
-  <Dialog.Title class="sr-only">Photoboard</Dialog.Title>
-  <Dialog.Description class="sr-only">Photos you've shared with your companion.</Dialog.Description>
+  <Dialog.Title class="sr-only">{m.app_board_title()}</Dialog.Title>
+  <Dialog.Description class="sr-only">{m.app_board_description()}</Dialog.Description>
 		<div class="board-header">
 			<h2>
 				Things you've shown her{#if items.length}<span class="ui-badge">{items.length}</span>{/if}
 			</h2>
-			<button class="btn btn-ghost btn-icon" onclick={onClose} aria-label="Close">
+			<button class="btn btn-ghost btn-icon" onclick={onClose} aria-label={m.app_common_close()}>
 				<Icon name="x" size={16} />
 			</button>
 		</div>
 
 		{#if loading}
-			<div class="board-empty"><span>Loading…</span></div>
+			<div class="board-empty"><span>{m.app_board_loading()}</span></div>
 		{:else if items.length === 0}
 			<div class="board-empty">
 				<Icon name="camera" size={40} />
-				<p>Nothing on the board yet.</p>
-				<span>Show her a photo and she'll keep it here.</span>
+				<p>{m.app_board_empty()}</p>
+				<span>{m.app_board_empty_hint()}</span>
 			</div>
 		{:else}
 			<div class="board-wall">
@@ -153,11 +155,11 @@
 					<div class="section-photos">
 						{#each section.items as item, i (item.id)}
 							<div class="photo-card" style="--rot: {ROTATIONS[i % ROTATIONS.length]}deg">
-								<button class="photo-btn" onclick={(event) => { event.currentTarget.focus(); void openLightbox(item); }} aria-label="View photo">
+								<button class="photo-btn" onclick={(event) => { event.currentTarget.focus(); void openLightbox(item); }} aria-label={m.app_board_view()}>
 									<img src={item.url} alt="" loading="lazy" />
 								</button>
 								<div class="caption">{shortDate(item.createdAt)}</div>
-								<button class="forget-btn" aria-label="Forget this" onclick={() => forget(item.id)}>
+								<button class="forget-btn" aria-label={m.app_board_forget()} onclick={() => forget(item.id)}>
 									<Icon name="x" size={12} />
 								</button>
 							</div>
@@ -179,12 +181,12 @@
  <Dialog.Portal><Dialog.Content>
  {#snippet child({ props })}
  <div {...props} class="lightbox">
-  <Dialog.Title class="sr-only">Photo</Dialog.Title>
-  <Dialog.Description class="sr-only">Flip the photo to see its note.</Dialog.Description>
-		<button class="lb-close btn btn-secondary btn-icon" onclick={closeLightbox} aria-label="Close">
+  <Dialog.Title class="sr-only">{m.app_board_photo()}</Dialog.Title>
+  <Dialog.Description class="sr-only">{m.app_board_flip_description()}</Dialog.Description>
+		<button class="lb-close btn btn-secondary btn-icon" onclick={closeLightbox} aria-label={m.app_common_close()}>
 			<Icon name="x" size={18} />
 		</button>
-		<button class="flip-card" class:flipped onclick={() => (flipped = !flipped)} aria-label="Flip photo">
+		<button class="flip-card" class:flipped onclick={() => (flipped = !flipped)} aria-label={m.app_board_flip()}>
 			<div class="flip-inner">
 				<div class="flip-front">
 					{#if selectedFullUrl}<img src={selectedFullUrl} alt="" />{/if}
@@ -195,13 +197,13 @@
 						{#if photo.note}
 							<p class="back-note">“{photo.note}”</p>
 						{:else}
-							<p class="back-empty">She hasn't said much about this one… yet.</p>
+							<p class="back-empty">{m.app_board_no_note()}</p>
 						{/if}
 					</div>
 				</div>
 			</div>
 		</button>
-		<div class="lb-hint">Click the photo to flip it over</div>
+		<div class="lb-hint">{m.app_board_flip_hint()}</div>
 	</div>
  {/snippet}</Dialog.Content></Dialog.Portal>
  </Dialog.Root>

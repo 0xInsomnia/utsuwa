@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import { isTauri } from '$lib/services/platform/platform';
 	import { ttsStore } from '$lib/stores/tts.svelte';
@@ -104,7 +105,7 @@
 							const name = path.split(/[/\\]/).pop() || 'image';
 							files.push(new File([contents], name, { type: imageMimeFromPath(path)! }));
 						} catch {
-							chatHintStore.showHint("Couldn't read that image. Try a different one.");
+							chatHintStore.showHint(m.app_chat_image_unreadable());
 						}
 					}
 					if (files.length) await queueFiles(files, visionCapable);
@@ -123,19 +124,18 @@
 		class="privacy-notice"
 		out:pop={{ base: 'translateX(-50%)', y: -10, duration: 200 }}
 		role="dialog"
-		aria-label="Photo privacy"
+		aria-label={m.app_chat_privacy_label()}
 	>
 		<Icon name="camera" size={16} />
 		<span>
 			{#if providerIsLocal}
-				Photos you show her stay on your machine. They never leave this device.
+				{m.app_chat_privacy_local()}
 			{:else}
-				Photos you show her are sent to {providerLabel} so she can see them. They're also saved on this
-				device; delete them anytime from the board.
+				{m.app_chat_privacy_remote({ provider: providerLabel })}
 			{/if}
 		</span>
 		<button type="button" class="privacy-ack" onclick={() => chatHintStore.ackPrivacy()}
-			>Got it</button
+			>{m.app_chat_got_it()}</button
 		>
 	</div>
 {/if}
@@ -158,7 +158,7 @@
 		{#if chatDraftStore.dropActive}
 			<div class="drop-zone" out:fadeFast={{ duration: 120 }}>
 				<Icon name="camera" size={22} />
-				<span>Drop a photo to show her</span>
+				<span>{m.app_chat_drop_photo()}</span>
 			</div>
 		{/if}
 		<div class="bar-row">

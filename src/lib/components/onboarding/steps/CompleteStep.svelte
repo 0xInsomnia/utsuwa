@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import { modulesStore } from '$lib/stores/modules.svelte';
 	import { vrmGalleryStore } from '$lib/stores/vrm-gallery.svelte';
@@ -28,15 +29,15 @@
 	</div>
 
 	<div class="ob-head">
-		<h2 class="ob-title">Meet {characterName}</h2>
-		<p class="ob-subtitle">{modulesStore.isModuleEnabled('consciousness') ? 'Your companion is ready for a conversation.' : 'Your companion is set up. Connect a chat model in Settings when you are ready to talk.'}</p>
+		<h2 class="ob-title">{m.app_onboarding_meet({ name: characterName })}</h2>
+		<p class="ob-subtitle">{modulesStore.isModuleEnabled('consciousness') ? m.app_onboarding_ready() : m.app_onboarding_ready_no_chat()}</p>
 	</div>
 
 	<button class="btn btn-primary btn-lg btn-block" onclick={onComplete}>
-		{modulesStore.isModuleEnabled('consciousness') ? 'Start chatting' : 'Open companion'}
+		{modulesStore.isModuleEnabled('consciousness') ? m.app_onboarding_start_chatting() : m.app_onboarding_open_companion()}
 		<Icon name="arrow-right" size={16} />
 	</button>
-	<button class="btn btn-ghost" onclick={onBack}>Back</button>
+	<button class="btn btn-ghost" onclick={onBack}>{m.app_common_back()}</button>
 </div>
 
 <style>

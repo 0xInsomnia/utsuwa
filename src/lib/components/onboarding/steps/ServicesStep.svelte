@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { Icon, ProviderDropdown, ModelDropdown, ContextSizeSlider } from '$lib/components/ui';
 	import { modulesStore } from '$lib/stores/modules.svelte';
@@ -69,14 +70,14 @@
 
 {#snippet troubleHelp()}
 	<p class="provider-help">
-		Having trouble? Click <a href={LOCAL_LLM_DOCS_URL} target="_blank" rel="noopener" onclick={openLocalLlmDocs}>here</a>
+		{m.app_services_trouble()} <a href={LOCAL_LLM_DOCS_URL} target="_blank" rel="noopener" onclick={openLocalLlmDocs}>{m.app_services_here()}</a>
 	</p>
 {/snippet}
 
 <div class="ob-step services-step">
 	<div class="ob-head">
-		<h2 class="ob-title" tabindex="-1">{stage === 'chat' ? 'Connect a chat model' : 'Want to hear them?'}</h2>
-		<p class="ob-subtitle">{stage === 'chat' ? 'Choose the service that powers your conversations. You can connect it later in Settings.' : 'Add spoken replies, or keep things quiet for now.'}</p>
+		<h2 class="ob-title" tabindex="-1">{stage === 'chat' ? m.app_services_chat_title() : m.app_services_voice_title()}</h2>
+		<p class="ob-subtitle">{stage === 'chat' ? m.app_services_chat_subtitle() : m.app_services_voice_subtitle()}</p>
 	</div>
 
 	{#if stage === 'chat'}
@@ -84,14 +85,14 @@
 	<div class="service-section">
 		<div class="service-header">
 			<Icon name="brain" size={16} />
-			<span class="service-title">Chat provider</span>
+			<span class="service-title">{m.app_services_chat_provider()}</span>
 		</div>
 
-		<ProviderDropdown type="llm" value={llmSettings.activeProvider} onSelect={llm.handleLLMProviderChange} placeholder="Select LLM provider..." />
+		<ProviderDropdown type="llm" value={llmSettings.activeProvider} onSelect={llm.handleLLMProviderChange} placeholder={m.app_services_select_llm()} />
 
 		{#if llmProvider?.requiresApiKey || llmProvider?.custom}
-			<input type="password" class="api-key-input" class:error={llm.llmFetchError} aria-label="Chat API key"
-				placeholder={llmProvider?.custom ? 'API Key (optional)' : 'Enter API Key...'}
+			<input type="password" class="api-key-input" class:error={llm.llmFetchError} aria-label={m.app_services_chat_key()}
+				placeholder={llmProvider?.custom ? m.app_services_key_optional() : m.app_services_key_placeholder()}
 				value={settingsStore.getProviderConfig(llmProvider.id).apiKey ?? ''}
 				oninput={(e) => llm.handleApiKeyChange(llmProvider.id, e.currentTarget.value)}
 				onblur={llmProvider?.custom ? undefined : handleLLMApiKeyBlur} />
@@ -109,14 +110,14 @@
 				</div>
 			{/if}
 			<input type="text" class="api-key-input"
-				placeholder={llmProvider.custom ? 'https://api.openai.com/v1/ or your endpoint' : llmProvider.defaultBaseUrl || 'http://localhost:11434/v1/'}
+				placeholder={llmProvider.custom ? m.app_services_endpoint_placeholder() : llmProvider.defaultBaseUrl || 'http://localhost:11434/v1/'}
 				value={settingsStore.getProviderConfig(llmProvider.id).baseUrl ?? ''}
 				oninput={(e) => llm.handleLLMBaseUrlChange(llmProvider.id, e.currentTarget.value)}
 				onblur={llmProvider.custom ? undefined : llm.refreshLLMModels} />
 			{#if llmProvider.isLocal}
 				<p class="provider-note">
 					<Icon name="check-circle" size={14} />
-					Local provider, no API key needed
+					{m.app_services_local_no_key()}
 				</p>
 				{#if !llm.llmFetchError}
 					{@render troubleHelp()}
@@ -127,21 +128,21 @@
 		<!-- Model: manual entry for custom endpoints, discovered dropdown otherwise -->
 		{#if llmProvider?.custom}
 			{@const customConfig = settingsStore.getProviderConfig(llmProvider.id)}
-			<input type="text" class="api-key-input" placeholder="Model (e.g. gpt-4o-mini, meta-llama/llama-3-70b)" value={llmSettings.activeModel ?? ''}
+			<input type="text" class="api-key-input" placeholder={m.app_services_model_placeholder()} value={llmSettings.activeModel ?? ''}
 				oninput={(e) => llm.handleLLMModelChange(e.currentTarget.value.trim())} />
 			{#if customConfig.baseUrl}
-				<ModelDropdown models={llm.llmModels} value={llmSettings.activeModel} onSelect={llm.handleLLMModelChange} placeholder="Pick a fetched model..."
+				<ModelDropdown models={llm.llmModels} value={llmSettings.activeModel} onSelect={llm.handleLLMModelChange} placeholder={m.app_services_pick_fetched()}
 					isLoading={llm.llmIsLoading} onRefresh={llm.refreshLLMModels} disabled={false} />
 			{:else}
-				<p class="provider-note">Enter a base URL to fetch available models.</p>
+				<p class="provider-note">{m.app_services_base_url_hint()}</p>
 			{/if}
 		{:else if llmSettings.activeProvider}
-			<ModelDropdown models={llm.llmModels} value={llmSettings.activeModel} onSelect={llm.handleLLMModelChange} placeholder="Select model..."
+			<ModelDropdown models={llm.llmModels} value={llmSettings.activeModel} onSelect={llm.handleLLMModelChange} placeholder={m.app_services_select_model()}
 				isLoading={llm.llmIsLoading} onRefresh={llm.llmHasApiKey ? llm.refreshLLMModels : undefined}
-				disabled={!llm.llmHasApiKey} disabledMessage="Enter API key first" />
+				disabled={!llm.llmHasApiKey} disabledMessage={m.app_services_key_first()} />
 		{/if}
 
-		<details class="ob-advanced"><summary>Advanced options</summary>
+		<details class="ob-advanced"><summary>{m.app_services_advanced()}</summary>
 		<ContextSizeSlider contextSize={llmSettings.contextSize} onChange={(value) => llm.handleLLMNumberSetting('contextSize', value)} id="ob-llm-context-size-toggle" />
 		</details>
 	</div>
@@ -151,28 +152,28 @@
 	<div class="service-section">
 		<div class="service-header">
 			<Icon name="mic" size={16} />
-			<span class="service-title">Spoken replies</span>
+			<span class="service-title">{m.app_services_spoken_replies()}</span>
 
-			<Switch label="Spoken replies" checked={ttsEnabled} onchange={(value) => ttsEnabled = value} />
+			<Switch label={m.app_services_spoken_replies()} checked={ttsEnabled} onchange={(value) => ttsEnabled = value} />
 		</div>
 
 		{#if ttsEnabled}
-			<ProviderDropdown type="tts" value={ttsSettings.activeProvider} onSelect={tts.handleTTSProviderChange} placeholder="Select TTS provider..." />
+			<ProviderDropdown type="tts" value={ttsSettings.activeProvider} onSelect={tts.handleTTSProviderChange} placeholder={m.app_services_select_tts()} />
 
 			{#if ttsProvider?.requiresApiKey}
-				<input type="password" class="api-key-input" class:error={tts.ttsFetchError} aria-label="Voice API key" placeholder="Enter API Key..."
+				<input type="password" class="api-key-input" class:error={tts.ttsFetchError} aria-label={m.app_services_voice_key()} placeholder={m.app_services_key_placeholder()}
 					value={settingsStore.getProviderConfig(ttsProvider.id).apiKey ?? ''}
 					oninput={(e) => tts.handleApiKeyChange(ttsProvider.id, e.currentTarget.value)} onblur={tts.handleTTSApiKeyBlur} />
 			{/if}
 
 			{#if ttsSettings.activeProvider && !ttsProvider?.isLocal}
-				<ModelDropdown models={tts.ttsModels} value={ttsSettings.activeModel} onSelect={(id) => tts.setSpeech('activeModel', id)} placeholder="Select model..."
+				<ModelDropdown models={tts.ttsModels} value={ttsSettings.activeModel} onSelect={(id) => tts.setSpeech('activeModel', id)} placeholder={m.app_services_select_model()}
 					isLoading={tts.ttsIsLoading} onRefresh={tts.ttsHasApiKey ? tts.fetchTTSModels : undefined}
-					disabled={!tts.ttsHasApiKey} disabledMessage="Enter API key first" />
+					disabled={!tts.ttsHasApiKey} disabledMessage={m.app_services_key_first()} />
 			{/if}
 
 			{#if ttsProvider?.id === 'elevenlabs' || ttsProvider?.id === 'fish-audio'}
-				<input type="text" class="api-key-input" list="{ttsProvider.id}-voices" placeholder="Voice ID" value={ttsSettings.activeVoiceId ?? ''}
+				<input type="text" class="api-key-input" list="{ttsProvider.id}-voices" placeholder={m.app_services_voice_id()} value={ttsSettings.activeVoiceId ?? ''}
 					oninput={(e) => tts.setSpeech('activeVoiceId', e.currentTarget.value.trim())} />
 				<datalist id="{ttsProvider.id}-voices">
 					{#each ttsProvider?.voices ?? [] as voice}
@@ -182,36 +183,36 @@
 			{/if}
 
 			{#if ttsProvider?.isLocal}
-				<input type="text" class="api-key-input" placeholder="Model/voice name" value={ttsSettings.activeModel ?? ''}
+				<input type="text" class="api-key-input" placeholder={m.app_services_voice_model()} value={ttsSettings.activeModel ?? ''}
 					oninput={(e) => tts.setSpeech('activeModel', e.currentTarget.value)} />
 				<input type="text" class="api-key-input" placeholder={ttsProvider.defaultBaseUrl || 'http://localhost:5000/'}
 					value={settingsStore.getProviderConfig(ttsProvider.id).baseUrl ?? ''}
 					oninput={(e) => settingsStore.setProviderConfig(ttsProvider.id, { baseUrl: e.currentTarget.value })} />
 				<p class="provider-note">
 					<Icon name="check-circle" size={14} />
-					Local provider - no API key needed
+					{m.app_services_local_no_key_dash()}
 				</p>
 			{/if}
 		{:else}
-			<p class="skip-note">Enable to add voice to your companion</p>
+			<p class="skip-note">{m.app_services_voice_off()}</p>
 		{/if}
 	</div>
 
-	<p class="skip-note">You can use the microphone button to speak instead of type. Transcription options live in Settings.</p>
+	<p class="skip-note">{m.app_services_mic_hint()}</p>
 	{/if}
 
 	<div class="ob-actions ob-actions--split">
 		<button class="btn btn-secondary" onclick={onBack}>
 			<Icon name="chevron-left" size={16} />
-			Back
+			{m.app_common_back()}
 		</button>
 		<button class="btn btn-primary" onclick={handleNext} disabled={stage === 'chat' ? !llm.isLLMConfigured : ttsEnabled && (!ttsSettings.activeProvider || !tts.ttsHasApiKey)}>
-			Next
+			{m.app_common_next()}
 			<Icon name="chevron-right" size={16} />
 		</button>
 	</div>
-	<button class="btn btn-ghost btn-block" onclick={onNext}>Set up later</button>
-	<p class="ob-hint">Provider keys save on this device. Requests go to the provider you choose.</p>
+	<button class="btn btn-ghost btn-block" onclick={onNext}>{m.app_services_later()}</button>
+	<p class="ob-hint">{m.app_services_keys_note()}</p>
 </div>
 
 <style>

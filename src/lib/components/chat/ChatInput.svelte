@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import { sttStore } from '$lib/stores/stt.svelte';
 	import { chatDraftStore } from '$lib/stores/chat-draft.svelte';
@@ -99,11 +100,11 @@
 					in:pop={{ duration: 200, y: 6, scale: 0.9 }}
 					out:fadeFast={{ duration: 120 }}
 				>
-					<img src={p.url} alt="To show her" />
+					<img src={p.url} alt={m.app_chat_pending_alt()} />
 					<button
 						type="button"
 						class="remove-chip"
-						aria-label="Remove image"
+						aria-label={m.app_chat_remove_image()}
 						onclick={() => chatDraftStore.removePending(p.image.id)}
 					>
 						<Icon name="x" size={12} />
@@ -125,8 +126,8 @@
 		{/if}
 		<div class="input-wrapper" class:recording={isListening} class:transcribing={isTranscribing}>
 			{#if isTranscribing}
-				<div class="transcribing-label">Transcribing...</div>
-				<button type="button" class="mic-btn recording" disabled aria-label="Transcribing">
+				<div class="transcribing-label">{m.app_chat_transcribing()}</div>
+				<button type="button" class="mic-btn recording" disabled aria-label={m.app_chat_transcribing_label()}>
 					<Icon name="loader" size={20} />
 				</button>
 			{:else if isListening}
@@ -135,8 +136,8 @@
 					type="button"
 					class="mic-btn recording"
 					onclick={() => sttStore.stopListening()}
-					aria-label="Stop recording"
-					title="Stop recording"
+					aria-label={m.app_chat_stop_recording()}
+					title={m.app_chat_stop_recording()}
 				>
 					<Icon name="stop" size={16} />
 				</button>
@@ -146,9 +147,9 @@
 					bind:this={textareaRef}
 					bind:value={chatDraftStore.draft}
 					onkeydown={handleKeydown}
-					aria-label="Message"
+					aria-label={m.app_chat_message()}
 					aria-busy={disabled}
-					placeholder="Type a message..."
+					placeholder={m.app_chat_placeholder()}
 					rows={overlay ? 1 : 2}
 					wrap={overlay ? 'off' : 'soft'}
 					readonly={disabled}></textarea>
@@ -160,8 +161,8 @@
 						class:vision-off={!visionCapable}
 						onclick={openPicker}
 						{disabled}
-						aria-label="Attach an image"
-						title={visionCapable ? 'Attach an image' : 'This model cannot see images'}
+						aria-label={m.app_chat_attach_image()}
+						title={visionCapable ? m.app_chat_attach_image() : m.app_chat_vision_off()}
 					>
 						<Icon name="paperclip" size={20} />
 					</button>
@@ -172,8 +173,8 @@
 					class="mic-btn voice-btn"
 					onclick={handleMicClick}
 					{disabled}
-					aria-label="Voice input"
-					title="Voice input"
+					aria-label={m.app_chat_voice_input()}
+					title={m.app_chat_voice_input()}
 				>
 					<Icon name="mic" size={20} />
 				</button>
@@ -182,8 +183,8 @@
 						type="button"
 						class="mic-btn send-btn"
 						onclick={cancelActiveTurn}
-						aria-label="Stop reply"
-						title="Stop reply"
+						aria-label={m.app_chat_stop_reply()}
+						title={m.app_chat_stop_reply()}
 					>
 						<Icon name="stop" size={16} />
 					</button>
@@ -192,8 +193,8 @@
 						type="submit"
 						class="mic-btn send-btn"
 						disabled={disabled || !hasContent}
-						aria-label="Send message"
-						title="Send message"
+						aria-label={m.app_chat_send()}
+						title={m.app_chat_send()}
 					>
 						<Icon name="send" size={20} />
 					</button>

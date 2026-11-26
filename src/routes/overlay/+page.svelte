@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import ScreenWakeLock from '$lib/components/display/ScreenWakeLock.svelte';
 	import WakeLockIndicator from '$lib/components/display/WakeLockIndicator.svelte';
 	import VrmScene from '$lib/components/vrm/VrmScene.svelte';
@@ -207,8 +208,8 @@
 <svelte:window onkeydown={async event => {
 	if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
 	if ((event.target as HTMLElement).closest('[role="dialog"], [role="menu"], [role="listbox"]')) return;
-	if (showCamera) { event.preventDefault(); showCamera = false; await tick(); document.querySelector<HTMLButtonElement>('[aria-label="Camera settings"]')?.focus(); }
-	else if (chatExpanded) { event.preventDefault(); overlayStore.setChatExpanded(false); await tick(); document.querySelector<HTMLButtonElement>('[aria-label="Open chat"]')?.focus(); }
+	if (showCamera) { event.preventDefault(); showCamera = false; await tick(); document.querySelector<HTMLButtonElement>('[data-camera-trigger]')?.focus(); }
+	else if (chatExpanded) { event.preventDefault(); overlayStore.setChatExpanded(false); await tick(); document.querySelector<HTMLButtonElement>('[data-chat-toggle]')?.focus(); }
 }} />
 <ScreenWakeLock />
 <McpConfirmDialog />
@@ -244,8 +245,9 @@
 			class="rail-btn"
 			class:rail-btn-active={showCamera}
 			onclick={() => (showCamera = !showCamera)}
-			aria-label="Camera settings" aria-expanded={showCamera}
-			title="Camera"
+			data-camera-trigger
+			aria-label={m.app_controls_camera_settings()} aria-expanded={showCamera}
+			title={m.app_controls_camera()}
 		>
 			<Icon name="video" size={15} />
 		</button>

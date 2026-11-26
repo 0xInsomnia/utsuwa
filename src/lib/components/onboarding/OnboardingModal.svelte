@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Dialog } from 'bits-ui';
 	import { tick } from 'svelte';
 	import { modulesStore } from '$lib/stores/modules.svelte';
@@ -85,11 +86,11 @@
 	<Dialog.Content bind:ref={panel} onEscapeKeydown={event => event.preventDefault()} onInteractOutside={event => event.preventDefault()}>
 	{#snippet child({ props })}
 	<div {...props} class="modal-container" out:pop={{ duration: 220, y: 12 }}>
-		<Dialog.Title class="sr-only">Set up your companion</Dialog.Title>
-		<Dialog.Description class="sr-only">A few short steps. Chat and voice can be set up later.</Dialog.Description>
+		<Dialog.Title class="sr-only">{m.app_onboarding_title()}</Dialog.Title>
+		<Dialog.Description class="sr-only">{m.app_onboarding_description()}</Dialog.Description>
 		<!-- Progress dots (hidden on complete step) -->
 		{#if currentStep !== 'complete'}
-			<div class="progress-dots" aria-label={`Setup step ${currentStepIndex + 1} of ${steps.length}`}>
+			<div class="progress-dots" aria-label={m.app_onboarding_progress({ current: currentStepIndex + 1, total: steps.length })}>
 				{#each steps as step, i}
 					<div
 						class="dot"

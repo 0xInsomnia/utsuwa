@@ -1,20 +1,24 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import Icon from './Icon.svelte';
 	import { characterStore } from '$lib/stores/character.svelte';
+	import { moodLabel, stageLabel } from '$lib/i18n/labels';
 	const character = $derived(characterStore.state);
 	const mood = $derived(characterStore.moodInfo);
+	const moodText = $derived(moodLabel(character.mood?.primary));
+	const stageText = $derived(stageLabel(character.relationshipStage));
 	const relationship = $derived([
-		{ label: 'Affection', value: characterStore.affectionPercent },
-		{ label: 'Trust', value: character.trust },
-		{ label: 'Intimacy', value: character.intimacy },
-		{ label: 'Comfort', value: character.comfort },
-		{ label: 'Respect', value: character.respect }
+		{ label: m.app_stats_affection(), value: characterStore.affectionPercent },
+		{ label: m.app_stats_trust(), value: character.trust },
+		{ label: m.app_stats_intimacy(), value: character.intimacy },
+		{ label: m.app_stats_comfort(), value: character.comfort },
+		{ label: m.app_stats_respect(), value: character.respect }
 	]);
 	const activity = $derived([
-		{ label: 'Days together', value: character.daysKnown },
-		{ label: 'Interactions', value: character.totalInteractions },
-		{ label: 'Day streak', value: character.currentStreak },
-		{ label: 'Best streak', value: character.longestStreak }
+		{ label: m.app_stats_days_together(), value: character.daysKnown },
+		{ label: m.app_stats_interactions(), value: character.totalInteractions },
+		{ label: m.app_stats_day_streak(), value: character.currentStreak },
+		{ label: m.app_stats_best_streak(), value: character.longestStreak }
 	]);
 </script>
 
@@ -27,24 +31,24 @@
 {/snippet}
 
 <div class="companion-state-summary">
-	<section aria-label="Character stats">
-		<h4>Right now</h4>
+	<section aria-label={m.app_stats_character()}>
+		<h4>{m.app_stats_right_now()}</h4>
 		<div class="mood-summary">
 			<span class="mood-symbol" style:color={mood.color}><Icon name={mood.icon} size={22} /></span>
-			<div><strong>{mood.name}</strong><p>{mood.description}</p></div>
+			<div><strong>{moodText.name}</strong><p>{moodText.description}</p></div>
 		</div>
 		{#if character.mood.causes.length > 0}<p class="mood-cause">{character.mood.causes.at(-1)}</p>{/if}
-		<dl>{@render metric('Energy', character.energy)}{@render metric('Mood intensity', character.mood.intensity)}</dl>
+		<dl>{@render metric(m.app_stats_energy(), character.energy)}{@render metric(m.app_stats_mood_intensity(), character.mood.intensity)}</dl>
 	</section>
 	{#if characterStore.appMode === 'dating_sim'}
-		<section aria-label="Relationship stats">
-			<div class="section-heading"><h4>Relationship</h4><span class="stage-name">{characterStore.stageInfo.name}</span></div>
-			<p class="section-description">{characterStore.stageInfo.description}</p>
+		<section aria-label={m.app_stats_relationship_label()}>
+			<div class="section-heading"><h4>{m.app_stats_relationship()}</h4><span class="stage-name">{stageText.name}</span></div>
+			<p class="section-description">{stageText.description}</p>
 			<dl>{#each relationship as stat}{@render metric(stat.label, stat.value)}{/each}</dl>
 		</section>
 	{/if}
-	<section aria-label="Activity stats">
-		<h4>Time together</h4>
+	<section aria-label={m.app_stats_activity_label()}>
+		<h4>{m.app_stats_time_together()}</h4>
 		<dl class="activity">{#each activity as stat}<div><dt>{stat.label}</dt><dd>{stat.value.toLocaleString()}</dd></div>{/each}</dl>
 	</section>
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	interface Props {
 		onNext: () => void;
 	}
@@ -41,10 +42,10 @@
 		</svg>
 	</div>
 
-	<p class="ob-subtitle">A few gentle steps to bring your companion to life.</p>
+	<p class="ob-subtitle">{m.app_onboarding_welcome()}</p>
 
 	<button class="btn btn-primary btn-lg btn-block" onclick={onNext}>
-		Get started
+		{m.app_onboarding_get_started()}
 	</button>
 </div>
 

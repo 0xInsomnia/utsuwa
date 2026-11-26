@@ -13,6 +13,7 @@
 	class="floating-chat-icon"
 	class:expanded={isExpanded}
 	onclick={handleClick}
+	data-chat-toggle
 	aria-label={isExpanded ? 'Collapse chat' : 'Open chat'}
 	title={isExpanded ? 'Collapse chat' : 'Open chat'}
 >

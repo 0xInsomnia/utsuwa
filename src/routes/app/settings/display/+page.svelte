@@ -1,13 +1,23 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
 	import { getColorMode, setColorMode, type ColorMode } from '$lib/utils/color-mode';
+	import { getLanguagePreference, setLanguagePreference } from '$lib/i18n/language';
+	import type { LanguagePreference } from '$lib/i18n/app-locale';
 	let colorMode = $state<ColorMode>('system');
+	let language = $state<LanguagePreference>('auto');
+	// Language names stay in their own language so anyone can find theirs
+	const languages: { value: LanguagePreference; label: string }[] = [
+		{ value: 'auto', label: m.app_language_auto() },
+		{ value: 'it', label: 'Italiano' },
+		{ value: 'en', label: 'English' }
+	];
 	const colorModes: { value: ColorMode; label: string; icon: string }[] = [
 		{ value: 'system', label: 'System', icon: 'monitor' },
 		{ value: 'light', label: 'Light', icon: 'sun' },
 		{ value: 'dark', label: 'Dark', icon: 'moon' }
 	];
-	onMount(() => { colorMode = getColorMode(); });
+	onMount(() => { colorMode = getColorMode(); language = getLanguagePreference(); });
 
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -73,6 +83,10 @@
 		<div class="setting-row">
 			<div class="setting-info"><span class="setting-label">Color theme</span><span class="setting-desc">Choose a theme or follow your device's appearance.</span></div>
 			<SegmentedControl label="Color theme" options={colorModes} value={colorMode} onchange={(value) => { colorMode = value; setColorMode(value); }} compact />
+		</div>
+		<div class="setting-row">
+			<div class="setting-info"><span class="setting-label">{m.app_language_label()}</span><span class="setting-desc">{m.app_language_desc()}</span></div>
+			<SegmentedControl label={m.app_language_label()} options={languages} value={language} onchange={(value) => { language = value; setLanguagePreference(value); }} compact />
 		</div>
 	</SettingsSection>
 	<SettingsSection title="Chat display">

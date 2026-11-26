@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { rangeProgress } from '$lib/utils/range-progress';
 	import { Icon } from '$lib/components/ui';
+	import { backgroundLabel } from '$lib/i18n/labels';
 	import {
 		displayStore,
 		CAMERA_DEFAULTS,
@@ -38,7 +40,7 @@
 
 	// Hand focus back to the button that opened the panel, in the app and the overlay
 	function close() {
-		const trigger = document.querySelector<HTMLElement>('button[aria-label="Camera settings"][aria-expanded="true"]');
+		const trigger = document.querySelector<HTMLElement>('button[data-camera-trigger][aria-expanded="true"]');
 		onclose();
 		trigger?.focus();
 	}
@@ -58,7 +60,7 @@
 			await displayStore.setCustomBackgroundImage(file);
 			uploadError = '';
 		} catch (e) {
-			uploadError = e instanceof Error ? e.message : "Couldn't use that image.";
+			uploadError = e instanceof Error ? e.message : m.app_camera_image_error();
 			clearTimeout(uploadErrorTimer);
 			uploadErrorTimer = setTimeout(() => (uploadError = ''), 4000);
 		}
@@ -66,10 +68,10 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<div class="camera-panel" role="dialog" aria-label="Camera settings" tabindex="-1" onkeydown={handleKeydown}>
+<div class="camera-panel" role="dialog" aria-label={m.app_controls_camera_settings()} tabindex="-1" onkeydown={handleKeydown}>
 	<div class="panel-header">
-		<h2 class="panel-title">Camera</h2>
-		<button class="btn btn-ghost btn-icon" onclick={close} aria-label="Close camera settings">
+		<h2 class="panel-title">{m.app_controls_camera()}</h2>
+		<button class="btn btn-ghost btn-icon" onclick={close} aria-label={m.app_camera_close()}>
 			<Icon name="x" size={14} />
 		</button>
 	</div>
@@ -77,7 +79,7 @@
 	<div class="group">
 		<label class="control">
 			<span class="control-label">
-				Zoom
+				{m.app_camera_zoom()}
 				<span class="control-value">{cam.zoom.toFixed(2)}×</span>
 			</span>
 			<input
@@ -92,7 +94,7 @@
 
 		<label class="control">
 			<span class="control-label">
-				Height
+				{m.app_camera_height()}
 				<span class="control-value">{cam.height > 0 ? '+' : ''}{(cam.height * 100).toFixed(0)} cm</span>
 			</span>
 			<input
@@ -107,7 +109,7 @@
 
 		<label class="control">
 			<span class="control-label">
-				Horizontal pan
+				{m.app_camera_pan()}
 				<span class="control-value">{cam.panX > 0 ? '+' : ''}{(cam.panX * 100).toFixed(0)} cm</span>
 			</span>
 			<input
@@ -122,7 +124,7 @@
 
 		<label class="control">
 			<span class="control-label">
-				Field of view
+				{m.app_camera_fov()}
 				<span class="control-value">{cam.fov.toFixed(0)}°</span>
 			</span>
 			<input
@@ -136,13 +138,13 @@
 		</label>
 
 		<button class="btn btn-secondary" onclick={() => displayStore.resetCamera(profile)} disabled={isDefault}>
-			Reset camera
+			{m.app_camera_reset()}
 		</button>
 	</div>
 
 	{#if profile === 'main'}
 		<div class="group" role="group" aria-labelledby="camera-bg-label">
-			<h3 class="group-label" id="camera-bg-label">Background</h3>
+			<h3 class="group-label" id="camera-bg-label">{m.app_camera_background()}</h3>
 			<div class="swatches">
 				{#each SCENE_PRESETS as preset (preset.id)}
 					<button
@@ -150,8 +152,8 @@
 						aria-pressed={displayStore.sceneBackground.type === preset.bg.type &&
 							displayStore.sceneBackground.value === preset.bg.value}
 						style:background={presetSwatch(preset)}
-						title={preset.label}
-						aria-label={preset.label}
+						title={backgroundLabel(preset)}
+						aria-label={backgroundLabel(preset)}
 						onclick={() => displayStore.setSceneBackground(preset.bg)}
 					></button>
 				{/each}
@@ -161,14 +163,14 @@
 						class="swatch"
 						aria-pressed={displayStore.activeBackgroundImage !== null}
 						style:background={`url("${image.url}") center / cover`}
-						title="Your image"
-						aria-label="Your image"
+						title={m.app_camera_your_image()}
+						aria-label={m.app_camera_your_image()}
 						onclick={() => displayStore.setSceneBackground({ type: 'image', value: image.id })}
 					></button>
 					<button
 						class="swatch swatch-action"
-						title="Remove image"
-						aria-label="Remove background image"
+						title={m.app_chat_remove_image()}
+						aria-label={m.app_camera_remove_background()}
 						onclick={() => displayStore.clearCustomBackgroundImage()}
 					>
 						<Icon name="x" size={14} />
@@ -176,8 +178,8 @@
 				{/if}
 				<button
 					class="swatch swatch-action"
-					title="Upload image"
-					aria-label="Upload background image"
+					title={m.app_camera_upload()}
+					aria-label={m.app_camera_upload_background()}
 					onclick={() => fileInput?.click()}
 				>
 					<Icon name="upload" size={14} />
@@ -197,13 +199,13 @@
 	{/if}
 
 	<div class="group">
-		<h3 class="group-label">Physics</h3>
+		<h3 class="group-label">{m.app_camera_physics()}</h3>
 		<label class="control">
 			<span class="control-label">
-				Movement intensity
+				{m.app_camera_movement()}
 				<span class="control-value">
 					{displayStore.physicsIntensity === PHYSICS_INTENSITY_DEFAULT
-						? 'Default'
+						? m.app_camera_default()
 						: `${displayStore.physicsIntensity.toFixed(2)}x`}
 				</span>
 			</span>
@@ -216,8 +218,8 @@
 				oninput={(e) => displayStore.setPhysicsIntensity(parseFloat(e.currentTarget.value))}
 			/>
 			<span class="range-ends" aria-hidden="true">
-				<span>Subtle</span>
-				<span>Lively</span>
+				<span>{m.app_camera_subtle()}</span>
+				<span>{m.app_camera_lively()}</span>
 			</span>
 		</label>
 	</div>
