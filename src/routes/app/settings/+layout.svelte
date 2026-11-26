@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import './settings-page.css';
@@ -11,19 +12,19 @@
 	let query = $state('');
 	let searchInput: HTMLInputElement;
 	const navItems = $derived([
-		{ href: localPath('app', '/settings/persona'), label: 'Character', icon: 'persona', keywords: 'avatar personality name companion mode system prompt instructions' },
-		{ href: localPath('app', '/settings/display'), label: 'Display', icon: 'monitor', keywords: 'appearance theme light dark chat typing screen awake layout' },
-		{ href: localPath('app', '/settings/animations'), label: 'Animations', icon: 'play', keywords: 'vrma emote gesture upload motion library idle thinking' },
-		{ href: localPath('app', '/settings/llm'), label: 'LLM Model', icon: 'brain', keywords: 'ai provider api model language context vision image photo' },
-		{ href: localPath('app', '/settings/tts'), label: 'TTS', icon: 'volume', keywords: 'speech voice audio omnivoice elevenlabs fish audio' },
-		{ href: localPath('app', '/settings/stt'), label: 'STT', icon: 'mic', keywords: 'microphone transcription speech recognition timeout whisper' },
-		...(mcpStore.capability === 'none' ? [] : [{ href: localPath('app', '/settings/mcp'), label: 'MCP', icon: 'modules', keywords: 'servers tools integrations' }]),
-		{ href: localPath('app', '/settings/memory'), label: 'Memory', icon: 'brain', keywords: 'facts relationship memories graph' },
-		{ href: localPath('app', '/settings/data'), label: 'Data', icon: 'database', keywords: 'export import backup save' },
-		{ href: localPath('app', '/settings/developer'), label: 'Developer', icon: 'code', keywords: 'debug logs reset diagnostics' }
+		{ href: localPath('app', '/settings/persona'), label: m.app_nav_character(), icon: 'persona', keywords: m.app_nav_kw_character() },
+		{ href: localPath('app', '/settings/display'), label: m.app_nav_display(), icon: 'monitor', keywords: m.app_nav_kw_display() },
+		{ href: localPath('app', '/settings/animations'), label: m.app_nav_animations(), icon: 'play', keywords: m.app_nav_kw_animations() },
+		{ href: localPath('app', '/settings/llm'), label: m.app_nav_llm(), icon: 'brain', keywords: m.app_nav_kw_llm() },
+		{ href: localPath('app', '/settings/tts'), label: m.app_nav_tts(), icon: 'volume', keywords: m.app_nav_kw_tts() },
+		{ href: localPath('app', '/settings/stt'), label: m.app_nav_stt(), icon: 'mic', keywords: m.app_nav_kw_stt() },
+		...(mcpStore.capability === 'none' ? [] : [{ href: localPath('app', '/settings/mcp'), label: m.app_nav_mcp(), icon: 'modules', keywords: m.app_nav_kw_mcp() }]),
+		{ href: localPath('app', '/settings/memory'), label: m.app_nav_memory(), icon: 'brain', keywords: m.app_nav_kw_memory() },
+		{ href: localPath('app', '/settings/data'), label: m.app_nav_data(), icon: 'database', keywords: m.app_nav_kw_data() },
+		{ href: localPath('app', '/settings/developer'), label: m.app_nav_developer(), icon: 'code', keywords: m.app_nav_kw_developer() }
 	]);
 	const filteredItems = $derived(navItems.filter(item => `${item.label} ${item.keywords}`.toLowerCase().includes(query.trim().toLowerCase())));
-	const currentPage = $derived(navItems.find(item => item.href === $page.url.pathname)?.label ?? 'Settings');
+	const currentPage = $derived(navItems.find(item => item.href === $page.url.pathname)?.label ?? m.app_controls_settings());
 
 	onMount(() => {
 		if (mcpStore.capability === 'unknown') void mcpStore.detectCapability();
@@ -41,17 +42,17 @@
 
 <div class="settings-layout">
 	<aside class="sidebar">
-		<a class="sidebar-brand" href={localPath('app')} aria-label="Utsuwa home">
+		<a class="sidebar-brand" href={localPath('app')} aria-label={m.app_nav_home()}>
 			<Icon name="chevron-left" size={16} />
 			<span>Utsuwa</span>
 		</a>
 		<div class="settings-search">
 			<Icon name="search" size={16} />
-			<input bind:this={searchInput} bind:value={query} placeholder="Search settings" aria-label="Search settings"
+			<input bind:this={searchInput} bind:value={query} placeholder={m.app_nav_search()} aria-label={m.app_nav_search()}
 				onkeydown={(event) => { if (event.key === 'Escape') { event.preventDefault(); query = ''; searchInput.blur(); } }} />
 			<kbd>/</kbd>
 		</div>
-		<nav class="nav" aria-label="Settings">
+		<nav class="nav" aria-label={m.app_controls_settings()}>
 			{#each filteredItems as item}
 				<a href={item.href} aria-label={item.label} title={item.label}
 					aria-current={$page.url.pathname === item.href ? 'page' : undefined}
@@ -59,16 +60,16 @@
 					<Icon name={item.icon} size={16} /><span class="nav-label">{item.label}</span>
 				</a>
 			{:else}
-				<p class="search-empty" role="status">No matching settings</p>
+				<p class="search-empty" role="status">{m.app_nav_no_match()}</p>
 			{/each}
 		</nav>
 		<div class="sidebar-footer">
-			<a href={localPath('app')} class="back-button" aria-label="Back"><Icon name="chevron-left" size={16} /><span>Back to companion</span><kbd>esc</kbd></a>
+			<a href={localPath('app')} class="back-button" aria-label={m.app_common_back()}><Icon name="chevron-left" size={16} /><span>{m.app_nav_back_companion()}</span><kbd>esc</kbd></a>
 		</div>
 	</aside>
 	<main class="content">
-		<header class="settings-topbar" aria-label="Settings breadcrumb">
-			<span>Settings</span><span class="separator">/</span><span class="current-page">{currentPage}</span>
+		<header class="settings-topbar" aria-label={m.app_nav_breadcrumb()}>
+			<span>{m.app_controls_settings()}</span><span class="separator">/</span><span class="current-page">{currentPage}</span>
 		</header>
 		<div class="settings-content">{@render children()}</div>
 	</main>

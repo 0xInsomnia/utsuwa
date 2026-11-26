@@ -1,7 +1,9 @@
+import { m } from '$lib/paraglide/messages';
 import { personaStore } from '$lib/stores/persona.svelte';
 import { characterStore } from '$lib/stores/character.svelte';
 import { vrmGalleryStore } from '$lib/stores/vrm-gallery.svelte';
 import { allEvents } from '$lib/data/events';
+import { dateLocaleTag } from '$lib/i18n/labels';
 import { defaultSystemRules } from '$lib/ai/prompt-builder';
 import type { CompletedEventRecord, EventType } from '$lib/types/events';
 
@@ -42,15 +44,15 @@ export function createPersonaPageState() {
 
 	// Labels and icons for achievement types
 	const achievementConfig: Record<EventType, { icon: string; label: string }> = {
-		milestone: { icon: 'trophy', label: 'Milestone' },
-		anniversary: { icon: 'heart', label: 'Anniversary' },
-		conditional: { icon: 'award', label: 'Unlocked' },
-		random: { icon: 'sparkles', label: 'Surprise' },
-		scheduled: { icon: 'calendar', label: 'Event' }
+		milestone: { icon: 'trophy', label: m.app_achievement_milestone() },
+		anniversary: { icon: 'heart', label: m.app_achievement_anniversary() },
+		conditional: { icon: 'award', label: m.app_achievement_unlocked() },
+		random: { icon: 'sparkles', label: m.app_achievement_surprise() },
+		scheduled: { icon: 'calendar', label: m.app_achievement_event() }
 	};
 
 	function formatAchievementDate(date: Date): string {
-		return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+		return new Date(date).toLocaleDateString(dateLocaleTag(), { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
 	// Persona form state

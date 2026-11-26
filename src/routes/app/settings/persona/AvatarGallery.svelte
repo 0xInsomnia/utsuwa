@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Dialog } from 'bits-ui';
 	import { vrmGalleryStore } from '$lib/stores/vrm-gallery.svelte';
 	import { Icon } from '$lib/components/ui';
@@ -15,7 +16,7 @@
 		<span class="settings-label">Avatar</span>
 		<Dialog.Trigger class="btn btn-secondary btn-sm" onclick={(event) => event.currentTarget.focus()}>
 			<Icon name="upload" size={14} />
-			<span>Add Custom</span>
+			<span>{m.app_persona_add_custom()}</span>
 		</Dialog.Trigger>
 	</div>
 
@@ -49,10 +50,10 @@
  <Dialog.Overlay class="ui-dialog-backdrop" />
  <Dialog.Content class="ui-dialog upload-content">
   <div class="upload-header">
-   <Dialog.Title class="upload-title">Upload Custom Model</Dialog.Title>
-   <Dialog.Close class="btn btn-ghost btn-icon" aria-label="Close model upload"><Icon name="x" size={16} /></Dialog.Close>
+   <Dialog.Title class="upload-title">{m.app_persona_upload_title()}</Dialog.Title>
+   <Dialog.Close class="btn btn-ghost btn-icon" aria-label={m.app_persona_upload_close()}><Icon name="x" size={16} /></Dialog.Close>
   </div>
-  <Dialog.Description class="sr-only">Choose a VRM avatar file from your device.</Dialog.Description>
+  <Dialog.Description class="sr-only">{m.app_persona_upload_desc()}</Dialog.Description>
   <VrmUploader onUpload={page.handleUpload} />
  </Dialog.Content>
 </Dialog.Portal>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Icon } from '$lib/components/ui';
 	import { isTauri } from '$lib/services/platform/platform';
 
@@ -15,7 +16,7 @@
 		try {
 			await onUpload(file);
 		} catch (e) {
-			uploadError = e instanceof Error ? e.message : "Couldn't add that model.";
+			uploadError = e instanceof Error ? e.message : m.app_vrm_upload_error();
 		}
 	}
 	let fileInput: HTMLInputElement;
@@ -113,11 +114,11 @@
 	<div class="icon">
 		<Icon name="upload" size={32} strokeWidth={1.5} />
 	</div>
-	<span class="label">Upload VRM</span>
+	<span class="label">{m.app_vrm_upload()}</span>
 	{#if uploadError}
 		<span class="hint error" role="alert">{uploadError}</span>
 	{:else}
-		<span class="hint">Drag & drop or click to browse</span>
+		<span class="hint">{m.app_vrm_upload_hint()}</span>
 	{/if}
 </div>
 

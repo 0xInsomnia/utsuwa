@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { getLLMProvider } from '$lib/services/providers/registry';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { createLlmSettingsState, type LlmSettingsState } from '$lib/stores/ai-services-settings.svelte';
@@ -34,8 +35,8 @@
 
 <div class="page">
 	<header class="page-header">
-		<h2>LLM Model</h2>
-		<p>Configure the chat model and provider settings.</p>
+		<h2>{m.app_nav_llm()}</h2>
+		<p>{m.app_llm_intro()}</p>
 	</header>
 
 	<LlmSettings {state} />

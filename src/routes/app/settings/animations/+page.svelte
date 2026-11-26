@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import SettingsSection from '$lib/components/settings/SettingsSection.svelte';
 	import AnimationRow from '$lib/components/settings/AnimationRow.svelte';
 	import { Button, Icon } from '$lib/components/ui';
@@ -32,7 +33,7 @@
 	}
 
 	const thinkingOptions = $derived([
-		{ value: 'none', label: 'None' },
+		{ value: 'none', label: m.app_anim_none() },
 		...[...candidates, ...builtinEntries].map((e) => ({ value: e.id, label: e.name }))
 	]);
 	const thinkingValue = $derived(
@@ -50,7 +51,7 @@
 		try {
 			await animationLibraryStore.addFromFile(file);
 		} catch (e) {
-			uploadError = e instanceof Error ? e.message : "Couldn't add that animation.";
+			uploadError = e instanceof Error ? e.message : m.app_anim_upload_error();
 		} finally {
 			uploading = false;
 		}
@@ -59,16 +60,16 @@
 
 <div class="page">
 	<header class="page-header">
-		<h2>Animations</h2>
-		<p>Motions she can perform. Describe each one so she knows when to use it.</p>
-		<p>Play switches back to your companion to show the motion.</p>
+		<h2>{m.app_nav_animations()}</h2>
+		<p>{m.app_anim_intro()}</p>
+		<p>{m.app_anim_intro_play()}</p>
 	</header>
-	<SettingsSection title="Base behavior" description="How she moves when nothing else is happening. Talking keeps the built-in motion.">
+	<SettingsSection title={m.app_anim_base()} description={m.app_anim_base_desc()}>
 		<div class="setting-row">
 			<div class="setting-info">
-				<span class="setting-label" id="idle-pool-label">Idle pool</span>
-				<span class="setting-desc">She cycles through the checked motions at random.</span>
-				{#if keepOneHint}<span class="setting-desc" role="status">Keep at least one idle motion.</span>{/if}
+				<span class="setting-label" id="idle-pool-label">{m.app_anim_idle()}</span>
+				<span class="setting-desc">{m.app_anim_idle_desc()}</span>
+				{#if keepOneHint}<span class="setting-desc" role="status">{m.app_anim_idle_keep()}</span>{/if}
 			</div>
 			<div class="pool" role="group" aria-labelledby="idle-pool-label">
 				{#each candidates as entry (entry.id)}
@@ -85,22 +86,22 @@
 		</div>
 		<div class="setting-row">
 			<div class="setting-info">
-				<span class="setting-label">Thinking</span>
-				<span class="setting-desc">Plays while she is working on a reply, before the first words arrive.</span>
+				<span class="setting-label">{m.app_anim_thinking()}</span>
+				<span class="setting-desc">{m.app_anim_thinking_desc()}</span>
 			</div>
 			<Select
 				class="thinking-select"
-				label="Thinking animation"
+				label={m.app_anim_thinking_label()}
 				value={thinkingValue}
 				options={thinkingOptions}
 				onchange={(value) => animationLibraryStore.setThinkingId(value === 'none' ? null : value)}
 			/>
 		</div>
 	</SettingsSection>
-	<SettingsSection title="Your animations">
+	<SettingsSection title={m.app_anim_yours()}>
 		{#snippet actions()}
 			<Button variant="secondary" size="sm" onclick={() => fileInput?.click()} disabled={uploading}>
-				<Icon name="upload" size={14} />{uploading ? 'Checking...' : 'Upload'}
+				<Icon name="upload" size={14} />{uploading ? m.app_anim_checking() : m.app_anim_upload()}
 			</Button>
 			<input bind:this={fileInput} type="file" accept=".vrma" hidden onchange={(e) => handleFile(e.currentTarget)} />
 		{/snippet}
@@ -108,10 +109,10 @@
 		{#each customEntries as entry (entry.id)}
 			<AnimationRow {entry} />
 		{:else}
-			<p class="hint">No custom animations yet. Upload a .vrma file to add one.</p>
+			<p class="hint">{m.app_anim_empty()}</p>
 		{/each}
 	</SettingsSection>
-	<SettingsSection title="Built-in emotes">
+	<SettingsSection title={m.app_anim_builtin()}>
 		{#each builtinEntries as entry (entry.id)}
 			<AnimationRow {entry} />
 		{/each}

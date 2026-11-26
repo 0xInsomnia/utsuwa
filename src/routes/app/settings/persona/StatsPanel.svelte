@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import CompanionStateSummary from '$lib/components/ui/CompanionStateSummary.svelte';
 	import SettingsSection from '$lib/components/settings/SettingsSection.svelte';
 	import { Icon } from '$lib/components/ui';
@@ -7,19 +8,19 @@
 </script>
 
 <div class="state-panel">
-	<SettingsSection title="Companion state" description="The same live view you'll find beside the chat input. These values change as you spend time together.">
-		{#if page.isCharacterLoading}<p class="loading" role="status">Loading character data...</p>{/if}
+	<SettingsSection title={m.app_stats_companion_state()} description={m.app_persona_state_desc()}>
+		{#if page.isCharacterLoading}<p class="loading" role="status">{m.app_persona_loading()}</p>{/if}
 		<CompanionStateSummary />
 	</SettingsSection>
 	{#if page.isDatingSimMode}
-		<SettingsSection title="Achievements" description="Moments you've shared with your companion.">
+		<SettingsSection title={m.app_persona_achievements()} description={m.app_persona_achievements_desc()}>
 			{#if page.achievements.length}
 				<ul>{#each page.achievements as achievement}<li>
 					<Icon name={page.achievementConfig[achievement.type].icon} size={16} />
 					<div><strong>{achievement.name}</strong><span>{page.achievementConfig[achievement.type].label}</span></div>
 					<time>{page.formatAchievementDate(achievement.completedAt)}</time>
 				</li>{/each}</ul>
-			{:else}<p class="empty">No achievements yet. They'll appear here as your relationship grows.</p>{/if}
+			{:else}<p class="empty">{m.app_persona_achievements_empty()}</p>{/if}
 		</SettingsSection>
 	{/if}
 </div>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { rangeProgress } from '$lib/utils/range-progress';
 	import Switch from './Switch.svelte';
 	const CONTEXT_SIZE_STEPS = [1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072];
@@ -29,7 +30,7 @@
 		contextSize,
 		onChange,
 		id = 'llm-context-size-toggle',
-		note = 'When enabled, memory injection and chat history are scaled to fit the selected model\'s context window.'
+		note = m.app_context_note()
 	}: Props = $props();
 
 	const enabled = $derived(contextSize !== undefined && contextSize > 0);
@@ -46,20 +47,20 @@
 
 <div class="context-size-row">
 	<label class="context-size-label" for={id}>
-		Context Window
+		{m.app_context_window()}
 		{#if enabled}
 			<span class="context-size-value">{formatContextSize(snapContextSize(contextSize as number))}</span>
 		{:else}
-			<span class="context-size-value">Default</span>
+			<span class="context-size-value">{m.app_context_default()}</span>
 		{/if}
 	</label>
-	<Switch {id} checked={enabled} onchange={handleToggle} label="Context window scaling" />
+	<Switch {id} checked={enabled} onchange={handleToggle} label={m.app_context_switch()} />
 </div>
 {#if enabled}
 	<div class="context-size-slider-row">
 		<input
 			type="range" use:rangeProgress={CONTEXT_SIZE_STEPS.indexOf(snapContextSize(contextSize as number))}
-			class="settings-range" aria-label="Context window size"
+			class="settings-range" aria-label={m.app_context_size()}
 			min="0"
 			max={CONTEXT_SIZE_STEPS.length - 1}
 			step="1"

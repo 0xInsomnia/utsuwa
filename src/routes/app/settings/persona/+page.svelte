@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { Dialog } from 'bits-ui';
 	import { goto } from '$app/navigation';
 	import { page as routePage } from '$app/state';
@@ -39,35 +40,35 @@
 </script>
 
 <div class="page character-screen">
-	<header class="page-header"><h2>Character</h2><p>Shape your companion's identity, or see how they're doing.</p></header>
-	<Tabs bind:value={() => view, navigate} items={[{ value: 'profile', label: 'Profile' }, { value: 'state', label: 'State & activity' }]} label="Character views">
+	<header class="page-header"><h2>{m.app_nav_character()}</h2><p>{m.app_persona_intro()}</p></header>
+	<Tabs bind:value={() => view, navigate} items={[{ value: 'profile', label: m.app_persona_tab_profile() }, { value: 'state', label: m.app_persona_tab_state() }]} label={m.app_persona_views()}>
 		{#snippet children(tab)}
 			{#if tab === 'profile'}
 				<div class="profile-sections">
-					<SettingsSection title="Identity">
-						<div class="setting-row"><div class="setting-info"><label class="setting-label" for="character-name">Name</label><span class="setting-desc">What you'll call your companion.</span></div>
-							<input id="character-name" class="settings-field name-field" bind:value={page.formName} placeholder="Utsuwa" aria-label="Character name" onblur={page.saveName} />
+					<SettingsSection title={m.app_persona_identity()}>
+						<div class="setting-row"><div class="setting-info"><label class="setting-label" for="character-name">{m.app_onboarding_name_label()}</label><span class="setting-desc">{m.app_persona_name_desc()}</span></div>
+							<input id="character-name" class="settings-field name-field" bind:value={page.formName} placeholder="Utsuwa" aria-label={m.app_persona_name_aria()} onblur={page.saveName} />
 						</div>
 					</SettingsSection>
-					<SettingsSection title="Appearance"><AvatarGallery {page} /></SettingsSection>
-					<SettingsSection title="Personality" description="How your companion speaks, behaves, and sees the world. Changes save when you leave the field.">
-						<label class="sr-only" for="character-personality">Core personality</label>
-						<textarea id="character-personality" class="settings-field" bind:value={page.formSystemPrompt} rows="6" onblur={page.saveSystemPrompt} placeholder="Personality, speaking style, and background..."></textarea>
+					<SettingsSection title={m.app_display_appearance()}><AvatarGallery {page} /></SettingsSection>
+					<SettingsSection title={m.app_persona_personality()} description={m.app_persona_personality_desc()}>
+						<label class="sr-only" for="character-personality">{m.app_onboarding_personality_label()}</label>
+						<textarea id="character-personality" class="settings-field" bind:value={page.formSystemPrompt} rows="6" onblur={page.saveSystemPrompt} placeholder={m.app_persona_personality_placeholder()}></textarea>
 					</SettingsSection>
-					<SettingsSection title="System prompt" description="Replaces the built-in framing and rules at the top of every prompt, in both modes. Leave it empty to use the default.">
+					<SettingsSection title={m.app_persona_system_prompt()} description={m.app_persona_system_prompt_desc()}>
 						{#snippet actions()}
-							{#if page.formCustomSystemPrompt.trim()}<Button variant="ghost" size="sm" onclick={() => (page.resetPromptOpen = true)}>Reset to default</Button>
-							{:else}<Button variant="ghost" size="sm" onclick={startFromDefault}>Start from default</Button>{/if}
+							{#if page.formCustomSystemPrompt.trim()}<Button variant="ghost" size="sm" onclick={() => (page.resetPromptOpen = true)}>{m.app_persona_reset_default()}</Button>
+							{:else}<Button variant="ghost" size="sm" onclick={startFromDefault}>{m.app_persona_start_default()}</Button>{/if}
 						{/snippet}
 						<div class="ai-fields">
-							<label class="sr-only" for="character-system-prompt">System prompt</label>
+							<label class="sr-only" for="character-system-prompt">{m.app_persona_system_prompt()}</label>
 							<textarea id="character-system-prompt" class="settings-field" bind:this={customPromptField} bind:value={page.formCustomSystemPrompt} rows="8" onblur={page.saveCustomSystemPrompt} placeholder={page.defaultRules} aria-describedby="character-system-prompt-hint"></textarea>
-							<p class="hint" id="character-system-prompt-hint">{'{{char}}'} becomes your companion's name and {'{{user}}'} becomes "the user", here and in Personality. Memory, mood, and the reply format are still added after this.</p>
+							<p class="hint" id="character-system-prompt-hint">{m.app_persona_macros_hint({ char: '{{char}}', user: '{{user}}' })}</p>
 						</div>
 					</SettingsSection>
-					<SettingsSection title="Experience">
-						<div class="setting-row"><div class="setting-info"><span class="setting-label">Companion mode</span><span class="setting-desc">Dating sim includes relationship progression and events. Companion focuses on everyday conversation.</span></div>
-							<SegmentedControl label="App mode" value={page.appMode} onchange={page.requestModeChange} options={[{ value: 'companion', label: 'Companion', icon: 'sparkles' }, { value: 'dating_sim', label: 'Dating sim', icon: 'heart' }]} compact />
+					<SettingsSection title={m.app_persona_experience()}>
+						<div class="setting-row"><div class="setting-info"><span class="setting-label">{m.app_persona_mode()}</span><span class="setting-desc">{m.app_persona_mode_desc()}</span></div>
+							<SegmentedControl label={m.app_persona_mode_label()} value={page.appMode} onchange={page.requestModeChange} options={[{ value: 'companion', label: m.app_onboarding_mode_companion(), icon: 'sparkles' }, { value: 'dating_sim', label: m.app_onboarding_mode_dating(), icon: 'heart' }]} compact />
 						</div>
 					</SettingsSection>
 				</div>
@@ -80,9 +81,9 @@
 	<Dialog.Portal>
 		<Dialog.Overlay class="confirm-modal" />
 		<Dialog.Content class="confirm-content">
-			<Dialog.Title class="confirm-title">Change companion mode?</Dialog.Title>
-			<Dialog.Description class="confirm-message">This changes whether relationship progression and events are active. Your companion's name and personality stay the same.</Dialog.Description>
-			<div class="confirm-actions"><Dialog.Close class="btn btn-secondary">Cancel</Dialog.Close><button class="btn btn-primary" onclick={page.confirmModeChange}>Change mode</button></div>
+			<Dialog.Title class="confirm-title">{m.app_persona_mode_confirm_title()}</Dialog.Title>
+			<Dialog.Description class="confirm-message">{m.app_persona_mode_confirm_desc()}</Dialog.Description>
+			<div class="confirm-actions"><Dialog.Close class="btn btn-secondary">{m.app_common_cancel()}</Dialog.Close><button class="btn btn-primary" onclick={page.confirmModeChange}>{m.app_persona_mode_confirm()}</button></div>
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
@@ -91,9 +92,9 @@
 	<Dialog.Portal>
 		<Dialog.Overlay class="confirm-modal" />
 		<Dialog.Content class="confirm-content">
-			<Dialog.Title class="confirm-title">Reset system prompt?</Dialog.Title>
-			<Dialog.Description class="confirm-message">Your custom system prompt will be cleared and the built-in one used again. Personality is not affected.</Dialog.Description>
-			<div class="confirm-actions"><Dialog.Close class="btn btn-secondary">Cancel</Dialog.Close><button class="btn btn-danger" onclick={page.resetCustomSystemPrompt}>Reset</button></div>
+			<Dialog.Title class="confirm-title">{m.app_persona_reset_title()}</Dialog.Title>
+			<Dialog.Description class="confirm-message">{m.app_persona_reset_desc()}</Dialog.Description>
+			<div class="confirm-actions"><Dialog.Close class="btn btn-secondary">{m.app_common_cancel()}</Dialog.Close><button class="btn btn-danger" onclick={page.resetCustomSystemPrompt}>{m.app_common_reset()}</button></div>
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>

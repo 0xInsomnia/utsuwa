@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { DropdownMenu } from 'bits-ui';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import {
@@ -26,25 +27,25 @@
 		placeholder?: string;
 	}
 
-	let { type, value, onSelect, placeholder = 'Select provider...' }: Props = $props();
+	let { type, value, onSelect, placeholder = m.app_dd_select_provider() }: Props = $props();
 
 	const getProvider = $derived(type === 'llm' ? getLLMProvider : getTTSProvider);
 	const selectedProvider = $derived(value ? getProvider(value) : null);
 
 	// Group providers by category for LLM
 	const llmCategories = [
-		{ id: 'cloud-commercial', label: 'Cloud Commercial', providers: ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'xai', 'groq', 'perplexity', 'moonshot', 'together'] },
-		{ id: 'cloud-additional', label: 'Cloud Additional', providers: ['cerebras', 'fireworks', 'novita', '302ai', 'comet'] },
-		{ id: 'aggregators', label: 'Aggregators', providers: ['openrouter', 'openai-compatible'] },
-		{ id: 'local', label: 'Local', providers: ['ollama', 'lmstudio', 'vllm', 'player2'] },
-		{ id: 'enterprise', label: 'Enterprise', providers: ['azure', 'cloudflare'] }
+		{ id: 'cloud-commercial', label: m.app_dd_cloud_commercial(), providers: ['openai', 'anthropic', 'google', 'deepseek', 'mistral', 'xai', 'groq', 'perplexity', 'moonshot', 'together'] },
+		{ id: 'cloud-additional', label: m.app_dd_cloud_additional(), providers: ['cerebras', 'fireworks', 'novita', '302ai', 'comet'] },
+		{ id: 'aggregators', label: m.app_dd_aggregators(), providers: ['openrouter', 'openai-compatible'] },
+		{ id: 'local', label: m.app_dd_local_group(), providers: ['ollama', 'lmstudio', 'vllm', 'player2'] },
+		{ id: 'enterprise', label: m.app_dd_enterprise(), providers: ['azure', 'cloudflare'] }
 	];
 
 	// Group providers by category for TTS
 	const ttsCategories = [
-		{ id: 'cloud', label: 'Cloud TTS', providers: ['elevenlabs', 'openai-tts', 'fish-audio', 'azure-speech', 'deepgram', 'alibaba-cosyvoice', 'volcengine', 'comet-tts'] },
-		{ id: 'local', label: 'Local / Free', providers: ['local-tts', 'omnivoice', 'web-speech', 'index-tts', 'browser-local', 'app-local'] },
-		{ id: 'generic', label: 'Generic', providers: ['openai-compatible-tts', 'player2-tts'] }
+		{ id: 'cloud', label: m.app_dd_cloud_tts(), providers: ['elevenlabs', 'openai-tts', 'fish-audio', 'azure-speech', 'deepgram', 'alibaba-cosyvoice', 'volcengine', 'comet-tts'] },
+		{ id: 'local', label: m.app_dd_local_free(), providers: ['local-tts', 'omnivoice', 'web-speech', 'index-tts', 'browser-local', 'app-local'] },
+		{ id: 'generic', label: m.app_dd_generic(), providers: ['openai-compatible-tts', 'player2-tts'] }
 	];
 
 	const categories = $derived(type === 'llm' ? llmCategories : ttsCategories);
@@ -109,7 +110,7 @@
 			<span class="trigger-label">{selectedProvider.name}</span>
 				{@const status = providerHealthStatus(selectedProvider.id)}
 				{#if status !== 'unknown'}
-					<span class="health-dot {status}" title={status === 'healthy' ? 'Reachable' : 'Unreachable'}></span>
+					<span class="health-dot {status}" title={status === 'healthy' ? m.app_dd_reachable() : m.app_dd_unreachable()}></span>
 				{/if}
 		{:else}
 			<span class="trigger-placeholder">{placeholder}</span>
@@ -136,12 +137,12 @@
 									<span class="provider-name">{provider.name}</span>
 							{@const status = providerHealthStatus(provider.id)}
 							{#if status !== 'unknown'}
-								<span class="health-dot {status}" title={status === 'healthy' ? 'Reachable' : 'Unreachable'}></span>
+								<span class="health-dot {status}" title={status === 'healthy' ? m.app_dd_reachable() : m.app_dd_unreachable()}></span>
 							{/if}
 									{#if provider.isLocal}
-										<span class="ui-badge">Local</span>
+										<span class="ui-badge">{m.app_dd_local_badge()}</span>
 									{:else if isConfigured(provider.id)}
-										<span class="configured" aria-label="Configured">
+										<span class="configured" aria-label={m.app_dd_configured()}>
 											<Icon name="check" size={10} strokeWidth={3} />
 										</span>
 									{/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 	import { localPath } from '$lib/config/links';
 	import { Button, Icon } from '$lib/components/ui';
@@ -17,7 +18,7 @@
 	}
 
 	async function remove() {
-		if (!confirm(`Delete "${entry.name}"? This can't be undone.`)) return;
+		if (!confirm(m.app_anim_delete_confirm({ name: entry.name }))) return;
 		await removeAnimation(entry.id);
 	}
 
@@ -33,7 +34,7 @@
 		{#if entry.kind === 'custom'}
 			<input
 				class="settings-field anim-name"
-				aria-label="Animation name"
+				aria-label={m.app_anim_name()}
 				maxlength={MAX_NAME_LENGTH}
 				value={entry.name}
 				onchange={(e) => rename(e.currentTarget)}
@@ -43,12 +44,12 @@
 		{/if}
 		{#if entry.durationSec !== undefined}<span class="duration">{entry.durationSec.toFixed(1)} s</span>{/if}
 		<div class="anim-actions">
-			<Button variant="secondary" size="sm" onclick={play} aria-label="Play {entry.name}">
-				<Icon name="play" size={14} />Play
+			<Button variant="secondary" size="sm" onclick={play} aria-label={m.app_anim_play_named({ name: entry.name })}>
+				<Icon name="play" size={14} />{m.app_anim_play()}
 			</Button>
 			{#if entry.kind === 'custom'}
-				<Button variant="ghost" size="sm" onclick={remove} aria-label="Delete {entry.name}">
-					<Icon name="trash" size={14} />Delete
+				<Button variant="ghost" size="sm" onclick={remove} aria-label={m.app_anim_delete_named({ name: entry.name })}>
+					<Icon name="trash" size={14} />{m.app_anim_delete()}
 				</Button>
 			{/if}
 		</div>
@@ -57,15 +58,15 @@
 		class="settings-field"
 		rows="2"
 		maxlength={MAX_DESCRIPTION_LENGTH}
-		placeholder="What does this motion look like?"
-		aria-label="Description of {entry.name}"
+		placeholder={m.app_anim_description_placeholder()}
+		aria-label={m.app_anim_description_named({ name: entry.name })}
 		value={entry.description}
 		onchange={(e) => animationLibraryStore.update(entry.id, { description: e.currentTarget.value })}
 	></textarea>
 	<div class="anim-foot">
-		<span class="setting-desc">Companion can use</span>
+		<span class="setting-desc">{m.app_anim_companion_can_use()}</span>
 		<Switch
-			label="Companion can use {entry.name}"
+			label={m.app_anim_companion_can_use_named({ name: entry.name })}
 			checked={entry.llmEnabled}
 			onchange={(checked) => animationLibraryStore.update(entry.id, { llmEnabled: checked })}
 		/>

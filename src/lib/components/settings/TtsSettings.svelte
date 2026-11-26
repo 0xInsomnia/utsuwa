@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { settingsStore } from '$lib/stores/settings.svelte';
 	import { getTTSProvider } from '$lib/services/providers/registry';
@@ -11,17 +12,17 @@
 	let { state }: { state: TtsSettingsState } = $props();
 </script>
 
-<SettingsSection title="Speech (TTS)">
-	{#snippet actions()}<Switch checked={state.isTTSEnabled} onchange={state.toggleTTS} label="Speech (TTS)" />{/snippet}
+<SettingsSection title={m.app_tts_section()}>
+	{#snippet actions()}<Switch checked={state.isTTSEnabled} onchange={state.toggleTTS} label={m.app_tts_section()} />{/snippet}
 	<div class="ai-fields">
 		{#if state.isTTSEnabled}
 			<div class="ai-field">
-				<span class="settings-label">Provider</span>
+				<span class="settings-label">{m.app_llm_provider()}</span>
 				<ProviderDropdown
 					type="tts"
 					value={state.speechSettings.activeProvider}
 					onSelect={state.handleTTSProviderChange}
-					placeholder="Select TTS provider..."
+					placeholder={m.app_services_select_tts()}
 				/>
 			</div>
 
@@ -30,13 +31,13 @@
 
 				{#if provider?.requiresApiKey}
 					<div class="ai-field">
-						<label class="settings-label" for="tts-api-key">API key</label>
+						<label class="settings-label" for="tts-api-key">{m.app_llm_api_key()}</label>
 						<input
 							id="tts-api-key"
 							type="password"
 							class="settings-field"
 							class:error={state.ttsFetchError}
-							placeholder="API Key" aria-label="API Key"
+							placeholder={m.app_llm_api_key_placeholder()} aria-label={m.app_llm_api_key_placeholder()}
 							value={settingsStore.getProviderConfig(provider.id).apiKey ?? ''}
 							oninput={(e) => state.handleApiKeyChange(provider.id, e.currentTarget.value)}
 							onblur={state.handleTTSApiKeyBlur}
@@ -46,29 +47,29 @@
 
 				{#if !provider?.isLocal}
 					<div class="ai-field">
-						<span class="settings-label">Model</span>
+						<span class="settings-label">{m.app_llm_model()}</span>
 						<ModelDropdown
 							models={state.ttsModels}
 							value={state.speechSettings.activeModel}
 							onSelect={(id) => state.setSpeech('activeModel', id)}
-							placeholder="Select model..."
+							placeholder={m.app_services_select_model()}
 							isLoading={state.ttsIsLoading}
 							onRefresh={state.ttsHasApiKey ? state.fetchTTSModels : undefined}
 							disabled={!state.ttsHasApiKey}
-							disabledMessage="Enter API key first"
+							disabledMessage={m.app_services_key_first()}
 						/>
 					</div>
 				{/if}
 
 				{#if provider?.id === 'elevenlabs' || provider?.id === 'fish-audio'}
 					<div class="ai-field">
-						<label class="settings-label" for="tts-voice-id">Voice ID</label>
+						<label class="settings-label" for="tts-voice-id">{m.app_tts_voice_id()}</label>
 						<input
 							id="tts-voice-id"
 							type="text"
 							class="settings-field"
 							list="{provider.id}-voices"
-							placeholder="Voice ID" aria-label="Voice ID"
+							placeholder={m.app_tts_voice_id()} aria-label={m.app_tts_voice_id()}
 							value={state.speechSettings.activeVoiceId ?? ''}
 							onchange={(e) => state.setSpeech('activeVoiceId', e.currentTarget.value.trim())}
 						/>
@@ -82,13 +83,13 @@
 
 				{#if provider?.isLocal && state.speechSettings.activeProvider !== 'omnivoice'}
 					<div class="ai-field">
-						<label class="settings-label" for="tts-local-voice">Voice</label>
+						<label class="settings-label" for="tts-local-voice">{m.app_tts_voice()}</label>
 						<input
 							id="tts-local-voice"
 							type="text"
 							class="settings-field"
 							list="local-tts-voices"
-							placeholder="Voice (e.g. af_bella)" aria-label="Voice (e.g. af_bella)"
+							placeholder={m.app_tts_voice_placeholder()} aria-label={m.app_tts_voice_placeholder()}
 							value={state.speechSettings.activeVoiceId ?? ''}
 							onchange={(e) => state.setSpeech('activeVoiceId', e.currentTarget.value.trim())}
 						/>
@@ -99,18 +100,18 @@
 						</datalist>
 					</div>
 					<div class="ai-field">
-						<label class="settings-label" for="tts-local-model">Model (optional)</label>
+						<label class="settings-label" for="tts-local-model">{m.app_tts_model_optional()}</label>
 						<input
 							id="tts-local-model"
 							type="text"
 							class="settings-field"
-							placeholder="Model (optional, e.g. kokoro)" aria-label="Model (optional, e.g. kokoro)"
+							placeholder={m.app_tts_model_optional_placeholder()} aria-label={m.app_tts_model_optional_placeholder()}
 							value={state.speechSettings.activeModel ?? ''}
 							onchange={(e) => state.setSpeech('activeModel', e.currentTarget.value)}
 						/>
 					</div>
 					<div class="ai-field">
-						<label class="settings-label" for="tts-base-url">Base URL</label>
+						<label class="settings-label" for="tts-base-url">{m.app_llm_base_url()}</label>
 						<input
 							id="tts-base-url"
 							type="text"
@@ -130,7 +131,7 @@
 				{/if}
 			{/if}
 		{:else}
-			<p class="hint">Turn on speech to pick a voice provider.</p>
+			<p class="hint">{m.app_tts_off()}</p>
 		{/if}
 	</div>
 </SettingsSection>

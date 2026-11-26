@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages';
 	import { DropdownMenu } from 'bits-ui';
 	import { Icon } from '$lib/components/ui';
 
@@ -22,11 +23,11 @@
 		models,
 		value,
 		onSelect,
-		placeholder = 'Select model...',
+		placeholder = m.app_services_select_model(),
 		isLoading = false,
 		onRefresh,
 		disabled = false,
-		disabledMessage = 'Enter API key first'
+		disabledMessage = m.app_services_key_first()
 	}: Props = $props();
 
 	let searchQuery = $state('');
@@ -66,7 +67,7 @@
 			{#if isLoading}
 				<span class="trigger-loading">
 					<span class="loading-spinner"></span>
-					Fetching models...
+					{m.app_dd_fetching()}
 				</span>
 			{:else if disabled}
 				<span class="trigger-placeholder">{disabledMessage}</span>
@@ -87,8 +88,8 @@
 					<input
 						type="text"
 						class="search-input"
-						placeholder="Search models..."
-						aria-label="Search models"
+						placeholder={m.app_dd_search_placeholder()}
+						aria-label={m.app_dd_search()}
 						bind:value={searchQuery}
 						onclick={(e) => e.stopPropagation()}
 						onkeydown={(e) => {
@@ -97,7 +98,7 @@
 						}}
 					/>
 					{#if searchQuery}
-						<button aria-label="Clear model search" class="btn btn-ghost btn-icon" onclick={() => (searchQuery = '')}>
+						<button aria-label={m.app_dd_clear_search()} class="btn btn-ghost btn-icon" onclick={() => (searchQuery = '')}>
 							<Icon name="x" size={12} />
 						</button>
 					{/if}
@@ -117,7 +118,7 @@
 						</DropdownMenu.Item>
 					{/each}
 					{#if filteredModels.length === 0 && !isLoading}
-						<div class="no-models">No models found</div>
+						<div class="no-models">{m.app_dd_no_models()}</div>
 					{/if}
 				</div>
 			</DropdownMenu.Content>
@@ -125,7 +126,7 @@
 	</DropdownMenu.Root>
 
 	{#if onRefresh && !isLoading}
-		<button class="btn btn-secondary btn-icon" onclick={onRefresh} title="Refresh models" aria-label="Refresh models">
+		<button class="btn btn-secondary btn-icon" onclick={onRefresh} title={m.app_dd_refresh()} aria-label={m.app_dd_refresh()}>
 			<Icon name="refresh-cw" size={14} />
 		</button>
 	{/if}
