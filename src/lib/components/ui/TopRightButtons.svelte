@@ -35,6 +35,15 @@
 	let avatarParts = $derived(vrmStore.avatarParts);
 	let outfitSummary = $derived.by(() => { const parts = vrmStore.avatarParts; return parts.length ? vrmStore.getOutfitSummary() : null; });
 	let filteredParts = $derived(avatarParts.filter(part => (part.label + ' ' + part.alias).toLowerCase().includes(partSearch.trim().toLowerCase())));
+	let recognizedIds = $derived.by(() => { const parts = avatarParts; return vrmStore.getBulkWardrobeCandidates(parts.map(p => p.id)); });
+	let filteredCandidateIds = $derived.by(() => vrmStore.getBulkWardrobeCandidates(filteredParts.map(p => p.id), false));
+	let bulkPending = $state(false);
+	function authorizeFiltered() {
+		if (!bulkPending) { bulkPending = true; return; }
+		vrmStore.setPartsAllowed(filteredCandidateIds, true);
+		bulkPending = false;
+	}
+	$effect(() => { partSearch; showParts; vrmStore.vrm; bulkPending = false; });
 	$effect(() => {
 		if (vrmStore.vrm) partSearch = '';
 	});
@@ -300,6 +309,17 @@
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeReactions} onchange={(e) => vrmStore.setWardrobeReactions(e.currentTarget.checked)} /> Reazioni ai cambi manuali</label>
 					<p class="parts-note">Abilita solo capi e accessori separati. Non autorizzare corpo, viso o capelli. I permessi si azzerano quando cambi o ricarichi il modello.</p>
 				</div>
+				<div class="bulk-permissions">
+					<strong>Selezione multipla permessi AI</strong>
+					<p class="parts-note">Questi pulsanti spuntano soltanto “Consenti all'AI di gestire”. Non cambiano la visibilità.</p>
+					<button class="btn btn-secondary" disabled={!recognizedIds.length} onclick={() => vrmStore.setPartsAllowed(recognizedIds, true)}>Seleziona tutti i capi ({recognizedIds.length})</button>
+					<button class="btn btn-secondary" disabled={!filteredCandidateIds.length} onclick={authorizeFiltered}>{bulkPending ? 'Conferma: autorizza ' + filteredCandidateIds.length + ' mesh' : 'Seleziona tutti i risultati (' + filteredCandidateIds.length + ')'}</button>
+					{#if bulkPending}
+						<p class="parts-note" role="status">Controlla i risultati: autorizza solo vestiti e accessori separati. Le mesh con nomi anatomici riconoscibili sono escluse.</p>
+						<button class="btn btn-secondary" onclick={() => (bulkPending = false)}>Annulla</button>
+					{/if}
+					<button class="btn btn-secondary" disabled={!avatarParts.some(p => p.allowed)} onclick={() => { vrmStore.setPartsAllowed(avatarParts.map(p => p.id), false); bulkPending = false; }}>Deseleziona tutti</button>
+				</div>
 				<div class="parts-list">
 					{#each filteredParts as part (part.id)}
 						<div class="wardrobe-item">
@@ -355,6 +375,8 @@
 	.wardrobe-item { padding: 0.4rem; border: 1px solid var(--border-light); border-radius: 6px; }
 	.wardrobe-settings { border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; }
 	.wardrobe-allow { color: var(--text-secondary); font-size: 0.75rem; }
+	.bulk-permissions { display: flex; flex-direction: column; gap: .45rem; border-bottom: 1px solid var(--border-light); padding-bottom: .6rem; }
+	.bulk-permissions .btn { min-height: 38px; white-space: normal; font-size: .8rem; }
 	.parts-list { display: flex; flex-direction: column; gap: 0.25rem; }
 	.part-row { display: flex; align-items: center; gap: 0.5rem; min-height: 36px; padding: 0.3rem; cursor: pointer; font-size: 0.82rem; overflow-wrap: anywhere; }
 	.part-row input { flex-shrink: 0; width: 18px; height: 18px; accent-color: #00b2ff; }

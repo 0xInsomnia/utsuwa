@@ -98,6 +98,24 @@ function createVrmStore() {
 	function setPartAllowed(id: string, allowed: boolean) {
 		avatarParts = avatarParts.map(part => part.id === id ? { ...part, allowed } : part);
 	}
+
+	// Bulk permissions never change mesh visibility. Protect recognizable
+	// anatomical meshes; ambiguous mesh names require a deliberate filtered selection.
+	function isBulkProtected(part: AvatarPart): boolean {
+		const words = part.label.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[_./-]+/g, ' ');
+		return /\b(body|skin|face|head|hair|eye|eyes|eyebrow|eyelash|teeth|tongue|hands|hand|nude|base|corpo|viso|capelli|occhi)\d*\b/.test(words);
+	}
+	function getBulkWardrobeCandidates(ids?: string[], identifiedOnly = true): string[] {
+		const selected = ids ? new Set(ids) : null;
+		return avatarParts.filter(part => (!selected || selected.has(part.id)) &&
+			!isBulkProtected(part) && (!identifiedOnly || !!(part.alias.trim() || garmentName(part.label))))
+			.map(part => part.id);
+	}
+	function setPartsAllowed(ids: string[], allowed: boolean) {
+		const selected = new Set(ids);
+		avatarParts = avatarParts.map(part => selected.has(part.id) && (!allowed || !isBulkProtected(part))
+			? { ...part, allowed } : part);
+	}
 	function setPartAlias(id: string, alias: string) {
 		appearanceRevision++;
 		avatarParts = avatarParts.map(part => part.id === id ? { ...part, alias: cleanLabel(alias) } : part);
@@ -420,6 +438,8 @@ function createVrmStore() {
 		setWardrobeAutonomous,
 		setWardrobeReactions,
 		setPartAllowed,
+		getBulkWardrobeCandidates,
+		setPartsAllowed,
 		setPartAlias,
 		setPartVisible,
 		restoreParts,
