@@ -300,6 +300,16 @@
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeReactions} onchange={(e) => vrmStore.setWardrobeReactions(e.currentTarget.checked)} /> Reazioni ai cambi manuali</label>
 					<p class="parts-note">Abilita solo capi e accessori separati. Non autorizzare corpo, viso o capelli. I permessi si azzerano quando cambi o ricarichi il modello.</p>
 				</div>
+				<div class="wardrobe-settings">
+					<button class="btn btn-secondary parts-reset" onclick={() => vrmStore.setAllRecognizedAllowed()} disabled={!avatarParts.some(part => vrmStore.isRecognizedGarment(part) && !part.allowed)}>Autorizza tutti i capi riconosciuti</button>
+					{#if partSearch.trim()}
+						<button class="btn btn-secondary parts-reset" disabled={!filteredParts.length} onclick={() => {
+							if (confirm('Autorizzare gli elementi filtrati? Controlla che siano solo vestiti e accessori. Le parti del corpo riconoscibili verranno escluse.')) vrmStore.allowFilteredParts(filteredParts.map(part => part.id));
+						}}>Autorizza tutti i risultati della ricerca</button>
+					{/if}
+					<button class="btn btn-secondary parts-reset" onclick={() => vrmStore.setAllPartsDisallowed()} disabled={!avatarParts.some(part => part.allowed)}>Deseleziona tutte le autorizzazioni</button>
+					<p class="parts-note">La selezione multipla modifica solo i permessi, non la visibilità del modello. Usa la ricerca per raggruppare mesh con nomi tecnici.</p>
+				</div>
 				<div class="parts-list">
 					{#each filteredParts as part (part.id)}
 						<div class="wardrobe-item">
