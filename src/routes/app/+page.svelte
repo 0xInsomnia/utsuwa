@@ -184,6 +184,19 @@
 		}, options);
 	}
 
+	// Coalesce manual wardrobe changes; wait until the current chat turn is
+	// finished. System events do not count as messages from the user.
+	$effect(() => {
+		const notice = vrmStore.wardrobeNotice;
+		if (!notice || !vrmStore.wardrobeReactions || chatStore.isLoading || photomodeStore.active || showOnboarding || !characterStore.isReady || !modulesStore.isModuleEnabled('consciousness')) return;
+		const timer = setTimeout(() => {
+			if (chatStore.isLoading || vrmStore.wardrobeNotice?.seq !== notice.seq) return;
+			vrmStore.consumeWardrobeNotice(notice.seq);
+			void handleSend(notice.text, [], { systemEvent: true });
+		}, 900);
+		return () => clearTimeout(timer);
+	});
+
 	// Handle speech bubble hide
 	function handleBubbleHide() {
 		latestResponse = '';

@@ -10,7 +10,6 @@
 	import { onMount } from 'svelte';
 	import type { Reminder } from '$lib/types/memory';
 	import { vrmStore } from '$lib/stores/vrm.svelte';
-	import type { Mesh } from 'three';
 
 	interface Props {
 		onInfoClick: () => void;
@@ -33,44 +32,11 @@
 	let showCamera = $state(false);
 	let showParts = $state(false);
 	let partSearch = $state('');
-	type AvatarPart = { mesh: Mesh; id: string; label: string; visible: boolean; initial: boolean };
-	let avatarParts = $state.raw<AvatarPart[]>([]);
-	let filteredParts = $derived(avatarParts.filter(part => part.label.toLowerCase().includes(partSearch.trim().toLowerCase())));
-
-	// Keep actual Three.js objects outside deep reactive proxies. Never edit the
-	// geometry, material, skeleton or original VRM file.
+	let avatarParts = $derived(vrmStore.avatarParts);
+	let filteredParts = $derived(avatarParts.filter(part => (part.label + ' ' + part.alias).toLowerCase().includes(partSearch.trim().toLowerCase())));
 	$effect(() => {
-		const avatar = vrmStore.vrm;
-		const parts: AvatarPart[] = [];
-		avatar?.scene.traverse(object => {
-			const mesh = object as Mesh;
-			if (!mesh.isMesh || !mesh.geometry) return;
-			const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-			const materialNames = materials.map(material => material?.name).filter(Boolean).join(', ');
-			const name = mesh.name || mesh.parent?.name || 'Mesh';
-			const label = materialNames && materialNames !== name ? name + ' · ' + materialNames : name;
-			parts.push({ mesh, id: mesh.uuid, label, visible: mesh.visible, initial: mesh.visible });
-		});
-		avatarParts = parts;
-		partSearch = '';
+		if (vrmStore.vrm) partSearch = '';
 	});
-
-	function togglePart(id: string) {
-		avatarParts = avatarParts.map(part => {
-			if (part.id !== id) return part;
-			part.mesh.visible = !part.visible;
-			vrmStore.recordAppearanceChange(part.label, part.mesh.visible);
-			return { ...part, visible: part.mesh.visible };
-		});
-	}
-
-	function restoreParts() {
-		avatarParts = avatarParts.map(part => {
-			if (part.mesh.visible !== part.initial) vrmStore.recordAppearanceChange(part.label, part.initial);
-			part.mesh.visible = part.initial;
-			return { ...part, visible: part.initial };
-		});
-	}
 	let colorMode = $state<ColorMode>('system');
 	let rootEl = $state<HTMLDivElement | null>(null);
 	let showArModal = $state(false);
@@ -313,13 +279,25 @@
 				</div>
 				<p class="parts-note">Mostra o nascondi gli elementi separati del modello. I nomi e la visibilità vengono comunicati all’AI durante la prossima conversazione.</p>
 				<input class="parts-search" aria-label="Cerca elemento" placeholder="Cerca mesh o materiale..." bind:value={partSearch} />
-				<button class="btn btn-secondary parts-reset" onclick={restoreParts} disabled={avatarParts.length === 0}>Ripristina originale</button>
+				<button class="btn btn-secondary parts-reset" onclick={() => vrmStore.restoreParts()} disabled={avatarParts.length === 0}>Ripristina originale</button>
+				<div class="wardrobe-settings">
+					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeEnabled(e.currentTarget.checked)} /> Controllo vestiti tramite AI</label>
+					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeAutonomous} disabled={!vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeAutonomous(e.currentTarget.checked)} /> Cambi autonomi senza conferma</label>
+					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeReactions} onchange={(e) => vrmStore.setWardrobeReactions(e.currentTarget.checked)} /> Reazioni ai cambi manuali</label>
+					<p class="parts-note">Abilita solo capi e accessori separati. Non autorizzare corpo, viso o capelli. I permessi si azzerano quando cambi o ricarichi il modello.</p>
+				</div>
 				<div class="parts-list">
 					{#each filteredParts as part (part.id)}
-						<label class="part-row">
-							<input type="checkbox" checked={part.visible} onchange={() => togglePart(part.id)} />
-							<span title={part.label}>{part.label}</span>
-						</label>
+						<div class="wardrobe-item">
+							<label class="part-row">
+								<input type="checkbox" checked={part.visible} onchange={(e) => vrmStore.setPartVisible(part.id, e.currentTarget.checked)} />
+								<span title={part.label}>{part.label}</span>
+							</label>
+							<label class="part-row wardrobe-allow"><input type="checkbox" checked={part.allowed} onchange={(e) => vrmStore.setPartAllowed(part.id, e.currentTarget.checked)} /> Consenti all'AI di gestire</label>
+							{#if part.allowed}
+								<input class="parts-search" aria-label="Nome del capo" placeholder="Nome del capo, es. giacca" value={part.alias} onchange={(e) => vrmStore.setPartAlias(part.id, e.currentTarget.value)} />
+							{/if}
+						</div>
 					{:else}
 						<p class="parts-note">{avatarParts.length ? 'Nessun elemento trovato.' : 'Carica un modello VRM.'}</p>
 					{/each}
@@ -362,6 +340,9 @@
 	.parts-note { margin: 0; font-size: 0.8rem; color: var(--text-secondary, #aaa); }
 	.parts-search { width: 100%; min-width: 0; padding: 0.55rem; background: var(--bg-secondary, #303030); color: inherit; border: 1px solid var(--border-light, #777); border-radius: 6px; font-size: 0.85rem; }
 	.parts-reset { width: 100%; font-size: 0.8rem; }
+	.wardrobe-item { padding: 0.4rem; border: 1px solid var(--border-light); border-radius: 6px; }
+	.wardrobe-settings { border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; }
+	.wardrobe-allow { color: var(--text-secondary); font-size: 0.75rem; }
 	.parts-list { display: flex; flex-direction: column; gap: 0.25rem; }
 	.part-row { display: flex; align-items: center; gap: 0.5rem; min-height: 36px; padding: 0.3rem; cursor: pointer; font-size: 0.82rem; overflow-wrap: anywhere; }
 	.part-row input { flex-shrink: 0; width: 18px; height: 18px; accent-color: #00b2ff; }
