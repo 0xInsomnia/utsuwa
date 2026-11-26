@@ -56,7 +56,21 @@ test('companion chat preserves native speech across direct and hosted state bloc
 			getModuleSettings: (id: string) =>
 				id === 'speech' ? speech : id === 'vision' ? visionSettings : { activeProvider: llmProvider, activeModel: 'test-model', contextSize }
 		},
-		vrmStore: { startTalking: () => {}, setThinking: (value: boolean) => { thinking.push(value); } },
+		vrmStore: {
+			startTalking: () => {},
+			setThinking: (value: boolean) => { thinking.push(value); },
+			// Wardrobe off, as for a user who never opened the clothes panel
+			wardrobeEnabled: false,
+			wardrobeAutonomous: false,
+			wardrobeVision: false,
+			appearanceRevision: 0,
+			getWardrobeTargets: () => [],
+			setPartVisible: () => false,
+			setWardrobeActionStatus: () => {},
+			setWardrobeVisionStatus: () => {},
+			captureAvatarImage: async () => null,
+			getAppearanceContext: () => ''
+		},
 		animationLibraryStore: { enabledForLlm: [] },
 		reminderStore: { upcoming: [] },
 		ttsStore: {

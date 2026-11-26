@@ -542,7 +542,7 @@ export async function sendCompanionMessage(
 			// Some compatible gateways flatten or weaken the system message.
 			// Do not save this generated snapshot into chat history.
 			const wireMessages = messages.map(message => {
-				if (message !== currentQuestion) return message;
+				if (message !== currentQuestion || !liveAppearance) return message;
 				const note = '\n\n[Contesto live fornito dall app, non scritto dall utente]\n' + liveAppearance + '\n[Fine contesto live]';
 				return { ...message, content: typeof message.content === 'string'
 					? message.content + note
