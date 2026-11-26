@@ -9,6 +9,8 @@
 	import { getColorMode, cycleColorMode, type ColorMode } from '$lib/utils/color-mode';
 	import { onMount } from 'svelte';
 	import type { Reminder } from '$lib/types/memory';
+	import { vrmStore } from '$lib/stores/vrm.svelte';
+	import type { Mesh } from 'three';
 
 	interface Props {
 		onInfoClick: () => void;
@@ -29,6 +31,44 @@
 	let clusterOpen = $state(false);
 	let remindersOpen = $state(false);
 	let showCamera = $state(false);
+	let showParts = $state(false);
+	let partSearch = $state('');
+	type AvatarPart = { mesh: Mesh; id: string; label: string; visible: boolean; initial: boolean };
+	let avatarParts = $state.raw<AvatarPart[]>([]);
+	let filteredParts = $derived(avatarParts.filter(part => part.label.toLowerCase().includes(partSearch.trim().toLowerCase())));
+
+	// Keep actual Three.js objects outside deep reactive proxies. Never edit the
+	// geometry, material, skeleton or original VRM file.
+	$effect(() => {
+		const avatar = vrmStore.vrm;
+		const parts: AvatarPart[] = [];
+		avatar?.scene.traverse(object => {
+			const mesh = object as Mesh;
+			if (!mesh.isMesh || !mesh.geometry) return;
+			const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+			const materialNames = materials.map(material => material?.name).filter(Boolean).join(', ');
+			const name = mesh.name || mesh.parent?.name || 'Mesh';
+			const label = materialNames && materialNames !== name ? name + ' · ' + materialNames : name;
+			parts.push({ mesh, id: mesh.uuid, label, visible: mesh.visible, initial: mesh.visible });
+		});
+		avatarParts = parts;
+		partSearch = '';
+	});
+
+	function togglePart(id: string) {
+		avatarParts = avatarParts.map(part => {
+			if (part.id !== id) return part;
+			part.mesh.visible = !part.visible;
+			return { ...part, visible: part.mesh.visible };
+		});
+	}
+
+	function restoreParts() {
+		avatarParts = avatarParts.map(part => {
+			part.mesh.visible = part.initial;
+			return { ...part, visible: part.initial };
+		});
+	}
 	let colorMode = $state<ColorMode>('system');
 	let rootEl = $state<HTMLDivElement | null>(null);
 	let showArModal = $state(false);
@@ -64,12 +104,14 @@
 			clusterOpen = false;
 			remindersOpen = false;
 			showCamera = false;
+			showParts = false;
 		};
 		const onKeydown = (event: KeyboardEvent) => {
 			if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
 			if (event.target instanceof Element && event.target.closest('[role="dialog"]:not(.camera-panel)')) return;
 			let target: string;
-			if (showCamera) { showCamera = false; target = '[aria-label="Camera settings"]'; }
+			if (showParts) { showParts = false; target = '[aria-label="Elementi modello"]'; }
+			else if (showCamera) { showCamera = false; target = '[aria-label="Camera settings"]'; }
 			else if (remindersOpen) { remindersOpen = false; target = '.reminder-trigger'; }
 			else if (clusterOpen) { clusterOpen = false; target = '.cluster-trigger'; }
 			else return;
@@ -87,7 +129,7 @@
 	function toggleCluster() {
 		clusterOpen = !clusterOpen;
 		remindersOpen = false;
-		if (!clusterOpen) showCamera = false;
+		if (!clusterOpen) { showCamera = false; showParts = false; }
 	}
 
 	function formatTimeLabel(date: Date): string {
@@ -224,7 +266,7 @@
 				class="btn btn-secondary btn-icon cluster-item"
 				aria-expanded={showCamera}
 				style="--i: 1"
-				onclick={() => (showCamera = !showCamera)}
+				onclick={() => { showCamera = !showCamera; showParts = false; }}
 				aria-label="Camera settings"
 				title="Camera"
 			>
@@ -249,7 +291,39 @@
 			>
 				<Icon name="cube" size={16} />
 			</button>
+			<button
+				class="btn btn-secondary btn-icon cluster-item"
+				style="--i: 4"
+				aria-label="Elementi modello"
+				title="Vestiti e accessori"
+				aria-expanded={showParts}
+				onclick={() => { showParts = !showParts; showCamera = false; }}
+			>
+				<Icon name="layers" size={16} />
+			</button>
 		</div>
+
+		{#if showParts}
+			<section class="parts-panel" aria-label="Vestiti e accessori">
+				<div class="parts-header">
+					<strong>Vestiti e accessori</strong>
+					<button class="btn btn-secondary btn-icon" aria-label="Chiudi pannello" onclick={() => (showParts = false)}><Icon name="x" size={16} /></button>
+				</div>
+				<p class="parts-note">Mostra o nascondi gli elementi separati del modello.</p>
+				<input class="parts-search" aria-label="Cerca elemento" placeholder="Cerca mesh o materiale..." bind:value={partSearch} />
+				<button class="btn btn-secondary parts-reset" onclick={restoreParts} disabled={avatarParts.length === 0}>Ripristina originale</button>
+				<div class="parts-list">
+					{#each filteredParts as part (part.id)}
+						<label class="part-row">
+							<input type="checkbox" checked={part.visible} onchange={() => togglePart(part.id)} />
+							<span title={part.label}>{part.label}</span>
+						</label>
+					{:else}
+						<p class="parts-note">{avatarParts.length ? 'Nessun elemento trovato.' : 'Carica un modello VRM.'}</p>
+					{/each}
+				</div>
+			</section>
+		{/if}
 
 		{#if showCamera}
 			<div class="camera-anchor">
@@ -264,6 +338,31 @@
 {/if}
 
 <style>
+	.parts-panel {
+		position: absolute;
+		top: 3.25rem;
+		right: 3.25rem;
+		width: min(280px, calc(100vw - 5.5rem));
+		max-height: min(65dvh, 480px);
+		overflow-y: auto;
+		background: var(--bg-primary, #202020);
+		color: var(--text-primary, #fff);
+		border: 1px solid var(--border-light, #777);
+		border-radius: var(--radius-md, 12px);
+		box-shadow: 0 8px 24px #0005;
+		padding: 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		z-index: 60;
+	}
+	.parts-header { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+	.parts-note { margin: 0; font-size: 0.8rem; color: var(--text-secondary, #aaa); }
+	.parts-search { width: 100%; min-width: 0; padding: 0.55rem; background: var(--bg-secondary, #303030); color: inherit; border: 1px solid var(--border-light, #777); border-radius: 6px; font-size: 0.85rem; }
+	.parts-reset { width: 100%; font-size: 0.8rem; }
+	.parts-list { display: flex; flex-direction: column; gap: 0.25rem; }
+	.part-row { display: flex; align-items: center; gap: 0.5rem; min-height: 36px; padding: 0.3rem; cursor: pointer; font-size: 0.82rem; overflow-wrap: anywhere; }
+	.part-row input { flex-shrink: 0; width: 18px; height: 18px; accent-color: #00b2ff; }
 	.top-right-buttons {
 		position: fixed;
 		top: 1rem;
