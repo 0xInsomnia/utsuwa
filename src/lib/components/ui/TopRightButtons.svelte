@@ -291,6 +291,8 @@
 					</div>
 				{/if}
 				<div class="wardrobe-settings">
+					<p class="parts-note"><strong>Ultimo comando AI:</strong> {vrmStore.wardrobeActionStatus}</p>
+					<p class="parts-note">Elementi autorizzati: {avatarParts.filter(part => part.allowed).length}. Per un comando diretto usa il nome esatto del capo, ad esempio “Togliti la giacca”.</p>
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeEnabled(e.currentTarget.checked)} /> Controllo vestiti tramite AI</label>
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeAutonomous} disabled={!vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeAutonomous(e.currentTarget.checked)} /> Cambi autonomi senza conferma</label>
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeVision} onchange={(e) => vrmStore.setWardrobeVision(e.currentTarget.checked)} /> Visione del proprio avatar</label>

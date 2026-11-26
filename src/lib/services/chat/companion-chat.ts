@@ -29,7 +29,7 @@ import { buildSystemPrompt, buildMcpSecurityInstructions, truncateChatHistory, t
 import { keepImage, prepareImage, type PreparedImage } from '$lib/services/storage/keepsakes';
 import { extractReminderTags, tryExtractReminderFromUserMessage } from '$lib/utils/reminders';
 import { reminderStore } from '$lib/stores/reminders.svelte';
-import { getWorkingMemory, ensureSession } from '$lib/engine/memory-session';
+import { getWorkingMemory, ensureSession, recordTurn } from '$lib/engine/memory-session';
 import { buildAdvancedParams, buildMessages, describeImagesRequest, type ChatLoopMessage } from '$lib/services/chat/turn-context';
 import { TurnStream } from '$lib/services/chat/turn-stream';
 import { pseudoCallFromTool } from '$lib/services/tts/speech-compiler';
@@ -129,6 +129,28 @@ export interface SendCompanionMessageOptions {
 	turnTimeoutMs?: number;
 }
 
+// Deterministic path for direct, narrowly scoped wardrobe commands. It does
+// not depend on the provider supporting function calling, and never guesses
+// which mesh a vague request means. Other conversation uses the native tool.
+function normalizeWardrobeText(text: string): string {
+	return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+		.replace(/[’']/g, ' ').replace(/[?!.,;:]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function parseDirectWardrobe(text: string): { visible: boolean; label: string } | null {
+	const value = normalizeWardrobeText(text).replace(/^(?:neliel\s+)?(?:(?:per favore|per piacere)\s+)?(?:puoi\s+)?/, '')
+		.replace(/\s+(?:per favore|per piacere)$/, '');
+	if (/^(?:svestiti|svestirti|spogliati|spogliarti|togliti tutto|togli tutto|cambiati|cambiarti)$/.test(value)) {
+		return { visible: false, label: '' };
+	}
+	const match = /^(togliti|togli|toglier(?:ti|e)|levati|leva|nascondi|rimettiti|rimetti|rimetterti|mettiti|metti|indossa|indossare|mostra)\s+(.+)$/.exec(value);
+	if (!match) return null;
+	const label = match[2].replace(/^(?:la|il|lo|i|gli|le|un|una|l|dei|delle)\s+/, '').trim();
+	const visible = /^(?:rimett|rimetter|mett|indoss|mostra)/.test(match[1]);
+	// Explicit names only. Do not select multiple unrelated parts by inference.
+	return { visible, label: /^(?:tutto|tutti|tutte|vestiti|abiti|abbigliamento|i vestiti|tutti i vestiti)$/.test(label) ? '' : label };
+}
+
 let activeTurn: AbortController | null = null;
 
 /** Stop the reply in flight, if any. */
@@ -203,6 +225,57 @@ export async function sendCompanionMessage(
 		const llm = resolveActiveLLM();
 		if (!llm) throw new Error(missingLLMMessage());
 		const { provider } = llm;
+
+		const directWardrobe = !systemEvent && images.length === 0 ? parseDirectWardrobe(content) : null;
+		if (directWardrobe) {
+			const targets = vrmStore.getWardrobeTargets();
+			const matches = targets.filter(part => normalizeWardrobeText(part.label) === directWardrobe.label);
+			let reply: string;
+			if (!vrmStore.wardrobeEnabled) {
+				reply = 'Non ho cambiato nulla: il controllo dei vestiti tramite AI è disattivato.';
+			} else if (!targets.length) {
+				reply = 'Non ho cambiato nulla: non ci sono capi autorizzati nel pannello Vestiti e accessori.';
+			} else if (!directWardrobe.label || !matches.length) {
+				const labels = [...new Set(targets.map(part => part.label))].slice(0, 12);
+				reply = 'Non ho cambiato nulla. Indicami il nome esatto di un capo autorizzato: ' + labels.join(', ') + '.';
+			} else {
+				const before = matches.filter(part => part.visible !== directWardrobe.visible);
+				let approved = true;
+				if (before.length && !vrmStore.wardrobeAutonomous) {
+					guard.pauseStall();
+					approved = await mcpStore.confirmToolCall({
+						serverName: 'Vestiti e accessori',
+						toolName: directWardrobe.visible ? 'Mostra capo' : 'Nascondi capo',
+						args: { capo: matches[0].label }
+					}, signal);
+				}
+				if (signal.aborted) throw signal.reason;
+				if (!approved) {
+					reply = 'Non ho cambiato nulla: azione non confermata.';
+				} else {
+					for (const part of before) vrmStore.setPartVisible(part.id, directWardrobe.visible, 'avatar');
+					const after = vrmStore.getWardrobeTargets();
+					const verified = matches.every(part => after.some(item => item.id === part.id && item.visible === directWardrobe.visible));
+					reply = !verified
+						? 'Non sono riuscita a completare il cambio di ' + matches[0].label + '. Controlla la mesh nel pannello.'
+						: (before.length ? 'Cambio eseguito: ' : 'Era già così: ') + matches[0].label + (directWardrobe.visible ? ' — visibile.' : ' — nascosto.');
+				}
+			}
+			vrmStore.setWardrobeActionStatus(reply);
+			chatStore.addMessage('assistant', reply);
+			hooks.setTyping(false);
+			vrmStore.setThinking(false);
+			hooks.setLatestResponse(reply);
+			vrmStore.startTalking(reply);
+			const speech = modulesStore.getModuleSettings('speech');
+			const speechProvider = speech.activeProvider as TTSProvider;
+			if (modulesStore.getModuleState('speech')?.enabled) {
+				ttsStore.speak(reply, buildTTSOptions(speech, speechProvider, settingsStore.getProviderConfig(speechProvider), getTTSProvider(speechProvider)));
+			}
+			await recordTurn({ role: 'user', content });
+			await recordTurn({ role: 'assistant', content: reply });
+			return;
+		}
 
 		const contextSize = consciousnessSettings.contextSize || undefined;
 		// Only inspect the live avatar for relevant turns, never every frame.
@@ -342,6 +415,7 @@ export async function sendCompanionMessage(
 
 		const { mcpTools, mcpToolNames, confirmToolNames, security } = await prepareMcpTurn(provider);
 		const wardrobeTargets = vrmStore.getWardrobeTargets();
+		if (outfitQuestion) vrmStore.setWardrobeActionStatus('Nessun cambio richiesto o eseguito in questo turno');
 		const wardrobeOffered = provider !== 'anthropic' && vrmStore.wardrobeEnabled && wardrobeTargets.length > 0;
 		const wardrobeName = 'neliel_set_wardrobe_visibility';
 		// Local tool shares the existing bounded tool loop, but never goes to an MCP server.
@@ -477,19 +551,28 @@ export async function sendCompanionMessage(
 					const offered = wardrobeTargets.find(part => part.id === part_id);
 					const current = vrmStore.getWardrobeTargets().find(part => part.id === part_id);
 					if (signal.aborted || !vrmStore.wardrobeEnabled || !offered || !current || typeof visible !== 'boolean') {
+						vrmStore.setWardrobeActionStatus('Comando AI non valido o non autorizzato');
 						return { call, content: 'Error: invalid or no longer permitted wardrobe action. Nothing changed.' };
 					}
-					if (current.visible === visible) return { call, content: JSON.stringify({ success: true, changed: false, ...current }) };
+					if (current.visible === visible) {
+						vrmStore.setWardrobeActionStatus(current.label + ': già nello stato richiesto');
+						return { call, content: JSON.stringify({ success: true, changed: false, ...current }) };
+					}
 					if (!vrmStore.wardrobeAutonomous) {
 						guard.pauseStall();
 						const approved = await mcpStore.confirmToolCall({
 							serverName: 'Vestiti e accessori', toolName: visible ? 'Mostra capo' : 'Nascondi capo',
 							args: { capo: current.label }
 						}, signal);
-						if (!approved || signal.aborted) return { call, content: 'User declined or cancelled. Nothing changed. Do not retry.' };
+						if (!approved || signal.aborted) {
+							vrmStore.setWardrobeActionStatus('Comando AI annullato o non confermato');
+							return { call, content: 'User declined or cancelled. Nothing changed. Do not retry.' };
+						}
 					}
 					const success = !signal.aborted && vrmStore.setPartVisible(current.id, visible, 'avatar');
-					return { call, content: JSON.stringify({ success, label: current.label, visible: success ? visible : current.visible, message: success ? 'Wardrobe visibility updated.' : 'Action rejected.' }) };
+					const actual = vrmStore.getWardrobeTargets().find(part => part.id === current.id);
+					vrmStore.setWardrobeActionStatus(success ? 'Cambio eseguito: ' + current.label + (visible ? ' — visibile' : ' — nascosto') : 'Cambio non riuscito: ' + current.label);
+					return { call, content: JSON.stringify({ success, label: current.label, visible: actual?.visible ?? null, message: success ? 'Wardrobe visibility updated and checked.' : 'Action rejected or visibility not achieved.' }) };
 				})
 			));
 			messages.push(...buildToolResultMessages(collectToolResults(settled, run, skipped)));
