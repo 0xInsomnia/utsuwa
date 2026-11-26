@@ -111,8 +111,7 @@ async function buildCompanionPrompt(
 		ttsToolCalling: shouldUseSpeechTools(llmProvider, speechEnabled, speechSettings),
 		avatarActions: toPromptActions(animationLibraryStore.enabledForLlm)
 	};
-	const appearance = vrmStore.getAppearanceContext();
-	return buildSystemPrompt(context) + (appearance ? '\n\n' + appearance : '');
+	return buildSystemPrompt(context);
 }
 
 /**
@@ -348,13 +347,16 @@ export async function sendCompanionMessage(
 				roundReasoning = reasoning;
 			};
 
+			// Recompute the authoritative live outfit after every local tool round.
+			const liveSystemPrompt = systemPrompt + '\n\n' + vrmStore.getAppearanceContext();
+
 			// Re-budget before every round: tool results from earlier rounds grow
 			// the history. Truncation runs per round (not once before the loop)
 			// and repairs assistant/tool pairs the cut may have separated.
 			if (contextSize && contextSize > 0 && messages.length > 0) {
 				messages = ensureToolPairs(
 					messages,
-					truncateChatHistory(messages, systemPrompt, contextSize, toolSchemaContext, currentQuestion)
+					truncateChatHistory(messages, liveSystemPrompt, contextSize, toolSchemaContext, currentQuestion)
 				);
 			}
 
@@ -384,7 +386,7 @@ export async function sendCompanionMessage(
 			bumpStall();
 			const roundText = await untilAborted(
 				streamChat(
-					{ ...llm, messages, systemPrompt, tools: sendTools, signal, onRetry, onReasoning, ...advancedParams },
+					{ ...llm, messages, systemPrompt: liveSystemPrompt, tools: sendTools, signal, onRetry, onReasoning, ...advancedParams },
 					onDelta,
 					onToolCall
 				)

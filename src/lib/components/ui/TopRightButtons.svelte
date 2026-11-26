@@ -33,6 +33,7 @@
 	let showParts = $state(false);
 	let partSearch = $state('');
 	let avatarParts = $derived(vrmStore.avatarParts);
+	let outfitSummary = $derived.by(() => { const parts = vrmStore.avatarParts; return parts.length ? vrmStore.getOutfitSummary() : null; });
 	let filteredParts = $derived(avatarParts.filter(part => (part.label + ' ' + part.alias).toLowerCase().includes(partSearch.trim().toLowerCase())));
 	$effect(() => {
 		if (vrmStore.vrm) partSearch = '';
@@ -277,9 +278,18 @@
 					<strong>Vestiti e accessori</strong>
 					<button class="btn btn-secondary btn-icon" aria-label="Chiudi pannello" onclick={() => (showParts = false)}><Icon name="x" size={16} /></button>
 				</div>
-				<p class="parts-note">Mostra o nascondi gli elementi separati del modello. I nomi e la visibilità vengono comunicati all’AI durante la prossima conversazione.</p>
+				<p class="parts-note">Assegna nomi ai capi per farli riconoscere all’AI. Non serve autorizzarla a cambiarli per farle conoscere l’abbigliamento.</p>
 				<input class="parts-search" aria-label="Cerca elemento" placeholder="Cerca mesh o materiale..." bind:value={partSearch} />
 				<button class="btn btn-secondary parts-reset" onclick={() => vrmStore.restoreParts()} disabled={avatarParts.length === 0}>Ripristina originale</button>
+				{#if outfitSummary}
+					<div class="wardrobe-item">
+						<strong>Stato comunicato all'AI</strong>
+						<p class="parts-note">Indossati: {outfitSummary.worn.join(', ') || 'nessun capo identificato'}</p>
+						<p class="parts-note">Nascosti: {outfitSummary.hidden.join(', ') || 'nessun capo identificato'}</p>
+						{#if outfitSummary.partial.length}<p class="parts-note">Parziali: {outfitSummary.partial.join(', ')}</p>{/if}
+						<p class="parts-note">Mesh non identificate come vestiti: {outfitSummary.unknown}. I nomi dedotti sono da verificare.</p>
+					</div>
+				{/if}
 				<div class="wardrobe-settings">
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeEnabled(e.currentTarget.checked)} /> Controllo vestiti tramite AI</label>
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeAutonomous} disabled={!vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeAutonomous(e.currentTarget.checked)} /> Cambi autonomi senza conferma</label>
@@ -294,9 +304,7 @@
 								<span title={part.label}>{part.label}</span>
 							</label>
 							<label class="part-row wardrobe-allow"><input type="checkbox" checked={part.allowed} onchange={(e) => vrmStore.setPartAllowed(part.id, e.currentTarget.checked)} /> Consenti all'AI di gestire</label>
-							{#if part.allowed}
-								<input class="parts-search" aria-label="Nome del capo" placeholder="Nome del capo, es. giacca" value={part.alias} onchange={(e) => vrmStore.setPartAlias(part.id, e.currentTarget.value)} />
-							{/if}
+							<input class="parts-search" aria-label="Nome del capo" placeholder="Nome del capo, es. giacca (facoltativo)" value={part.alias} onchange={(e) => vrmStore.setPartAlias(part.id, e.currentTarget.value)} />
 						</div>
 					{:else}
 						<p class="parts-note">{avatarParts.length ? 'Nessun elemento trovato.' : 'Carica un modello VRM.'}</p>
