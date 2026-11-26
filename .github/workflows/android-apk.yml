@@ -65,6 +65,10 @@ jobs:
           echo "VITE_NELIEL_ANDROID_BUILD=$code" >> "$GITHUB_ENV"
           echo "VITE_NELIEL_ANDROID_SIGNED=$HAS_SIGNING_KEY" >> "$GITHUB_ENV"
           echo "NELIEL_BUILD_CODE=$code" >> "$GITHUB_ENV"
+      - name: Bundle and verify Neliel VRMA motion pack
+        run: python3 scripts/fetch-neliel-animations.py
+      - name: Test animation registry
+        run: node --test --experimental-strip-types src/lib/stores/animation-library-parser.test.ts
       - name: Initialize Android project
         run: pnpm exec tauri android init --ci --skip-targets-install
       - name: Build ARM64 debug APK

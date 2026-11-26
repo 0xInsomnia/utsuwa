@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
 	BUILTIN_ANIMATIONS,
 	BUILTIN_IDLES,
+	NELIEL_ANIMATIONS,
 	parseAnimationMetadata,
 	applyBuiltinOverrides,
 	resolveIdlePool,
@@ -163,4 +164,18 @@ test('prompt actions fall back to the name when a description is blank', () => {
 		]),
 		[{ id: 'vrma_05', description: 'Spin around once' }, { id: 'custom_1', description: 'Somersault' }]
 	);
+});
+
+test('Neliel pack adds twenty unique built-ins without changing existing defaults', () => {
+	assert.equal(NELIEL_ANIMATIONS.length, 20);
+	assert.equal(NELIEL_ANIMATIONS.filter(a => a.kind === 'idle').length, 3);
+	assert.equal(new Set(applyBuiltinOverrides({}).map(a => a.id)).size, 32);
+	for (const clip of NELIEL_ANIMATIONS) {
+		assert.ok(clip.url.endsWith(clip.id + '.vrma'));
+		assert.ok(clip.description.length > 0);
+		if (clip.kind === 'idle') assert.equal(clip.llmEnabled, false);
+	}
+	const id = 'neliel_o_nod';
+	assert.equal(applyBuiltinOverrides({ [id]: { llmEnabled: false } }).find(a => a.id === id)?.llmEnabled, false);
+	assert.deepEqual(parseAnimationMetadata(JSON.stringify({ custom: [{ id, name: 'collision' }] })).custom, []);
 });

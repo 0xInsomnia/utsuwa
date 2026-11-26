@@ -64,7 +64,172 @@ export const BUILTIN_IDLES: readonly AnimationEntry[] = ['idle', 'idle_2', 'idle
 	})
 );
 
-const BUILTIN_IDS = new Set([...BUILTIN_ANIMATIONS, ...BUILTIN_IDLES].map((a) => a.id));
+
+// Curated, pre-retargeted VRM Animation 1.0 clips. Provenance: static/animations/neliel/CREDITS.md.
+export const NELIEL_ANIMATIONS: readonly AnimationEntry[] = [
+  {
+    "id": "neliel_o_idle_2",
+    "name": "Riposo naturale 1",
+    "description": "Posizione di riposo con piccoli movimenti.",
+    "kind": "idle",
+    "llmEnabled": false,
+    "url": "/animations/neliel/neliel_o_idle_2.vrma"
+  },
+  {
+    "id": "neliel_o_idle_3",
+    "name": "Riposo naturale 2",
+    "description": "Variante di riposo in piedi.",
+    "kind": "idle",
+    "llmEnabled": false,
+    "url": "/animations/neliel/neliel_o_idle_3.vrma"
+  },
+  {
+    "id": "neliel_o_idle_4",
+    "name": "Riposo naturale 3",
+    "description": "Variante di riposo rilassata.",
+    "kind": "idle",
+    "llmEnabled": false,
+    "url": "/animations/neliel/neliel_o_idle_4.vrma"
+  },
+  {
+    "id": "neliel_o_happy",
+    "name": "Gioia",
+    "description": "Esprimi gioia con un gesto del corpo.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_happy.vrma"
+  },
+  {
+    "id": "neliel_o_happy_2",
+    "name": "Gioia vivace",
+    "description": "Reazione felice ed energica.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_happy_2.vrma"
+  },
+  {
+    "id": "neliel_o_happy_3",
+    "name": "Entusiasmo",
+    "description": "Mostra entusiasmo per una buona notizia.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_happy_3.vrma"
+  },
+  {
+    "id": "neliel_o_sad",
+    "name": "Dispiacere",
+    "description": "Mostra tristezza o dispiacere con delicatezza.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_sad.vrma"
+  },
+  {
+    "id": "neliel_o_angry",
+    "name": "Irritazione",
+    "description": "Gesto di irritazione quando il contesto lo giustifica.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_angry.vrma"
+  },
+  {
+    "id": "neliel_o_relaxed",
+    "name": "Rilassata",
+    "description": "Gesto rilassato durante una conversazione informale.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_relaxed.vrma"
+  },
+  {
+    "id": "neliel_o_relaxed_2",
+    "name": "Rilassata 2",
+    "description": "Una seconda variante rilassata.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_relaxed_2.vrma"
+  },
+  {
+    "id": "neliel_o_nod",
+    "name": "Annuire",
+    "description": "Annuisci per confermare o mostrare ascolto.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_nod.vrma"
+  },
+  {
+    "id": "neliel_o_nod_2",
+    "name": "Annuire 2",
+    "description": "Seconda variante di assenso.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_nod_2.vrma"
+  },
+  {
+    "id": "neliel_o_shake",
+    "name": "Scuotere la testa",
+    "description": "Scuoti la testa per esprimere disaccordo.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_shake.vrma"
+  },
+  {
+    "id": "neliel_o_think",
+    "name": "Pensierosa",
+    "description": "Gesto di riflessione quando stai valutando qualcosa.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_think.vrma"
+  },
+  {
+    "id": "neliel_o_raise_hand",
+    "name": "Alzare la mano",
+    "description": "Alza una mano per attirare l'attenzione.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_raise_hand.vrma"
+  },
+  {
+    "id": "neliel_o_neutral",
+    "name": "Gesto conversazione",
+    "description": "Gesto neutro durante una conversazione.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_o_neutral.vrma"
+  },
+  {
+    "id": "neliel_o_world_walk",
+    "name": "Camminata",
+    "description": "Ciclo di camminata; anteprima sul posto, non navigazione.",
+    "kind": "emote",
+    "llmEnabled": false,
+    "url": "/animations/neliel/neliel_o_world_walk.vrma"
+  },
+  {
+    "id": "neliel_o_world_walk_slow",
+    "name": "Camminata lenta",
+    "description": "Ciclo di camminata lenta; anteprima manuale.",
+    "kind": "emote",
+    "llmEnabled": false,
+    "url": "/animations/neliel/neliel_o_world_walk_slow.vrma"
+  },
+  {
+    "id": "neliel_o_world_jog",
+    "name": "Corsetta",
+    "description": "Ciclo di corsetta; anteprima manuale.",
+    "kind": "emote",
+    "llmEnabled": false,
+    "url": "/animations/neliel/neliel_o_world_jog.vrma"
+  },
+  {
+    "id": "neliel_q_dance",
+    "name": "Ballo",
+    "description": "Breve ciclo di ballo giocoso, quando richiesto.",
+    "kind": "emote",
+    "llmEnabled": true,
+    "url": "/animations/neliel/neliel_q_dance.vrma"
+  }
+];
+
+const BUILTIN_IDS = new Set([...BUILTIN_ANIMATIONS, ...BUILTIN_IDLES, ...NELIEL_ANIMATIONS].map((a) => a.id));
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -138,7 +303,7 @@ export function parseAnimationMetadata(raw: string | null): StoredAnimationMetad
 }
 
 export function applyBuiltinOverrides(overrides: Record<string, BuiltinOverride>): AnimationEntry[] {
-	return [...BUILTIN_ANIMATIONS, ...BUILTIN_IDLES].map((a) => ({ ...a, ...overrides[a.id] }));
+	return [...BUILTIN_ANIMATIONS, ...BUILTIN_IDLES, ...NELIEL_ANIMATIONS].map((a) => ({ ...a, ...overrides[a.id] }));
 }
 
 /** URLs the idle cycle picks from: the chosen clips that still exist, else the fallback. */
