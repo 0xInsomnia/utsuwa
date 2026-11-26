@@ -60,6 +60,22 @@ function createVrmStore() {
 	let wardrobeEnabled = $state(false);
 	let wardrobeAutonomous = $state(false);
 	let wardrobeReactions = $state(false);
+	let wardrobeVision = $state(false);
+	let visionStatus = $state('Non attiva');
+	let appearanceRevision = 0;
+	let captureAvatar: (() => Promise<Blob | null>) | null = null;
+	function registerAvatarCapture(handler: () => Promise<Blob | null>) {
+		captureAvatar = handler;
+		return () => { if (captureAvatar === handler) captureAvatar = null; };
+	}
+	function setWardrobeVision(value: boolean) {
+		wardrobeVision = value;
+		visionStatus = value ? 'In attesa di una domanda sui vestiti' : 'Non attiva';
+	}
+	function setWardrobeVisionStatus(value: string) { visionStatus = value; }
+	async function captureAvatarImage() {
+		return wardrobeVision && vrm && captureAvatar ? captureAvatar() : null;
+	}
 	let wardrobeNotice = $state<{ seq: number; text: string } | null>(null);
 	let noticeSeq = 0;
 	let appearanceChanges: AppearanceChange[] = [];
@@ -81,9 +97,11 @@ function createVrmStore() {
 		avatarParts = avatarParts.map(part => part.id === id ? { ...part, allowed } : part);
 	}
 	function setPartAlias(id: string, alias: string) {
+		appearanceRevision++;
 		avatarParts = avatarParts.map(part => part.id === id ? { ...part, alias: cleanLabel(alias) } : part);
 	}
 	function recordAppearanceChange(label: string, visible: boolean, source: 'user' | 'avatar' = 'user') {
+		appearanceRevision++;
 		appearanceChanges = [...appearanceChanges, { label: cleanLabel(label), visible, source }].slice(-8);
 	}
 	function publishWardrobeNotice(text: string) {
@@ -197,7 +215,9 @@ function createVrmStore() {
 	}
 
 	function setVrm(instance: VRM | null) {
+		appearanceRevision++;
 		appearanceChanges = [];
+		visionStatus = wardrobeVision ? 'Nuovo modello: in attesa di analisi' : 'Non attiva';
 		wardrobeNotice = null;
 		wardrobeEnabled = false;
 		wardrobeAutonomous = false;
@@ -384,6 +404,13 @@ function createVrmStore() {
 		get wardrobeAutonomous() { return wardrobeAutonomous; },
 		get wardrobeReactions() { return wardrobeReactions; },
 		get wardrobeNotice() { return wardrobeNotice; },
+		get wardrobeVision() { return wardrobeVision; },
+		get wardrobeVisionStatus() { return visionStatus; },
+		get appearanceRevision() { return appearanceRevision; },
+		setWardrobeVision,
+		setWardrobeVisionStatus,
+		registerAvatarCapture,
+		captureAvatarImage,
 		setWardrobeEnabled,
 		setWardrobeAutonomous,
 		setWardrobeReactions,

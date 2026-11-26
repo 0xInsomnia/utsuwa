@@ -293,6 +293,8 @@
 				<div class="wardrobe-settings">
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeEnabled(e.currentTarget.checked)} /> Controllo vestiti tramite AI</label>
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeAutonomous} disabled={!vrmStore.wardrobeEnabled} onchange={(e) => vrmStore.setWardrobeAutonomous(e.currentTarget.checked)} /> Cambi autonomi senza conferma</label>
+					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeVision} onchange={(e) => vrmStore.setWardrobeVision(e.currentTarget.checked)} /> Visione del proprio avatar</label>
+					<p class="parts-note">Se attiva, invia un fotogramma 3D al modello visivo configurato (o al modello chat se supporta immagini) quando si parla di abbigliamento. Può consumare crediti API; le immagini non vengono salvate in chat. Stato: {vrmStore.wardrobeVisionStatus}</p>
 					<label class="part-row"><input type="checkbox" checked={vrmStore.wardrobeReactions} onchange={(e) => vrmStore.setWardrobeReactions(e.currentTarget.checked)} /> Reazioni ai cambi manuali</label>
 					<p class="parts-note">Abilita solo capi e accessori separati. Non autorizzare corpo, viso o capelli. I permessi si azzerano quando cambi o ricarichi il modello.</p>
 				</div>

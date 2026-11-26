@@ -89,6 +89,25 @@
 		// Photo-mode capture: render one supersampled frame in place (the canvas
 		// has preserveDrawingBuffer), composite background and frame on a 2D
 		// canvas, and hand back a PNG blob. Restores the live pixel ratio after.
+		// Independent low-resolution capture for opted-in avatar awareness.
+		// Capture only the WebGL scene, never the UI, camera or user's photos.
+		const unregisterAvatarCapture = vrmStore.registerAvatarCapture(async () => {
+			if (!renderer || !scene || !camera.current || !vrmStore.vrm || renderer.xr.isPresenting) return null;
+			const source = renderer.domElement;
+			if (!source.width || !source.height) return null;
+			renderer.render(scene, camera.current);
+			const canvas = document.createElement('canvas');
+			const scale = Math.min(1, 768 / Math.max(source.width, source.height));
+			canvas.width = Math.max(1, Math.round(source.width * scale));
+			canvas.height = Math.max(1, Math.round(source.height * scale));
+			const context = canvas.getContext('2d');
+			if (!context) return null;
+			context.fillStyle = '#bfc3cc';
+			context.fillRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(source, 0, 0, canvas.width, canvas.height);
+			return new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+		});
+
 		const unregisterCapture = photomodeStore.registerCapture(async (options: CaptureOptions) => {
 			if (!renderer || !scene || !camera.current) return null;
 			const glCanvas = renderer.domElement;
@@ -209,6 +228,7 @@
 		return () => {
 			observer.disconnect();
 			unregisterCapture();
+			unregisterAvatarCapture();
 			canvas?.removeEventListener('pointerdown', onPointerDown);
 			canvas?.removeEventListener('pointerup', onPointerUp);
 		};
