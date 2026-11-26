@@ -98,23 +98,6 @@ function createVrmStore() {
 	function setPartAllowed(id: string, allowed: boolean) {
 		avatarParts = avatarParts.map(part => part.id === id ? { ...part, allowed } : part);
 	}
-	function isRecognizedGarment(part: AvatarPart) {
-		return !!(part.alias.trim() || garmentName(part.label));
-	}
-	function setAllRecognizedAllowed() {
-		avatarParts = avatarParts.map(part => isRecognizedGarment(part) ? { ...part, allowed: true } : part);
-	}
-	function setAllPartsDisallowed() {
-		avatarParts = avatarParts.map(part => part.allowed ? { ...part, allowed: false } : part);
-	}
-	function allowFilteredParts(ids: string[]) {
-		const selected = new Set(ids);
-		avatarParts = avatarParts.map(part => {
-			const words = part.label.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[_./-]+/g, ' ');
-			const protectedPart = /\b(body|skin|face|head|hair|eye|eyes|teeth|tongue|hands|base|corpo|viso|capelli|pelle)\b/.test(words);
-			return selected.has(part.id) && !protectedPart ? { ...part, allowed: true } : part;
-		});
-	}
 	function setPartAlias(id: string, alias: string) {
 		appearanceRevision++;
 		avatarParts = avatarParts.map(part => part.id === id ? { ...part, alias: cleanLabel(alias) } : part);
@@ -437,10 +420,6 @@ function createVrmStore() {
 		setWardrobeAutonomous,
 		setWardrobeReactions,
 		setPartAllowed,
-		setAllRecognizedAllowed,
-		setAllPartsDisallowed,
-		allowFilteredParts,
-		isRecognizedGarment,
 		setPartAlias,
 		setPartVisible,
 		restoreParts,
